@@ -15,7 +15,7 @@ Deactivate the Virtual Environment \
 ```environmentName\Scripts\deactivate.bat```
 
 To Reactivate: \
-```.\environmentName\Scripts\activate.bat``` 
+```\environmentName\Scripts\activate.bat``` 
 
 To Delete the Virtual Environment: \
 ```rmdir /s /q <environmentName>```
