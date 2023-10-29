@@ -3,7 +3,7 @@ Create the Virtual Environment from CMD: \
 ```python -m venv <environmentName>```
 
 Activate the Virtual Environment: \
-```.\environmentName\Scripts\activate.bat``` 
+```environmentName\Scripts\activate.bat``` 
 
 Install All Dependencies \
 ```python pip install ...```
@@ -12,7 +12,7 @@ Run Functions as Normal \
 ```python <functionName>```
 
 Deactivate the Virtual Environment \
-```deactivate```
+```environmentName\Scripts\deactivate.bat```
 
 To Reactivate: \
 ```.\environmentName\Scripts\activate.bat``` 
