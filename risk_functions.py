@@ -22,8 +22,17 @@ def get_value_at_risk(
         expected_volatility : float = None,
         period : int = None) -> float:
     """
-    Gets VaR, a statistical measurement of downside risk to a investment value,
-    Assuming no changing in positions over a certain period
+    Gets VaR, where x% of all possible losses will be smaller
+
+    Assumptions:
+    -----
+        - No changing in positions over a certain period
+
+        - Either:
+            - Past returns ARE indicative of future results (for Historical)
+            - Future returns ARE normally distributed (for Parametric)
+
+    -----
 
     Parameters:
     -----
@@ -52,9 +61,9 @@ def get_value_at_risk(
 
         #* Formula for Parametric Method:
         # VaR = Investment Value * Z-score * Expected Volatility * sqrt (Time Horizon / trading days)
-        z_score = NormalDist().inv_cdf(confidence_level.value / 100)
+        z_score = NormalDist().inv_cdf(confidence_level / 100)
         
-        VaR = investment_value * z_score * expected_volatility * sqrt(period / BUSINESS_DAYS_IN_YEAR)
+        VaR = abs(investment_value * z_score * expected_volatility * sqrt(period / BUSINESS_DAYS_IN_YEAR))
 
         return VaR
     
@@ -67,12 +76,14 @@ def get_value_at_risk(
         
         nth_percentile_percent = np.percentile(historical_returns, 100-confidence_level)
 
-        VaR = nth_percentile_percent * investment_value
+        VaR = abs(nth_percentile_percent * investment_value)
 
         return VaR
 
 
 def main():
+    VaR = get_value_at_risk(VaRMethod.PARAMETRIC, investment_value=100_000, confidence_level=99, expected_volatility=0.2, period=10)
+    print(VaR)
     VaR = get_value_at_risk(VaRMethod.HISTORICAL, investment_value=100_000, confidence_level=99, historical_returns=[0.009, 0.01, 0.05, -0.005, -0.030])
     print(VaR)
 
