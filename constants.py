@@ -1,0 +1,6 @@
+
+# Constants for various time units
+BUSINESS_DAYS_IN_YEAR = 256
+WEEKS_PER_YEAR = 52.25
+MONTHS_PER_YEAR = 12
+SECONDS_PER_YEAR = 365.25 * 24 * 60 * 60
