@@ -32,7 +32,7 @@ class StatisticalCalculations():
 
     def SR(self, returns : list[float]) -> float:
         mean = np.nanmean(returns)
-        stddev = np.std(returns)
+        stddev = self.stddev(returns)
 
         return mean / stddev
 
@@ -68,15 +68,24 @@ class StatisticalCalculations():
     def stddev(
             self,
             lst : list[float],
-            span : int,
+            span : int = -1,
             annualize : bool = False) -> float:
         
+        """Returns the standard deviation of a list of values"""
+
         # get the lesser of the two values
         span = min(len(lst), span)
 
-        reduced_lst : list[float] = lst[:-span]
+        reduced_lst : list[float] = lst[:-span] if (span != -1) else lst
 
-        standard_deviation : float = np.std(reduced_lst)
+        xbar : float = np.mean(reduced_lst)
+
+        numerator : float = 0
+
+        for x in reduced_lst:
+            numerator += (x - xbar)**2
+
+        standard_deviation : float = sqrt(numerator / (len(reduced_lst) - 1))
 
         factor = 1
 
@@ -128,7 +137,6 @@ class StatisticalCalculations():
     def exponentially_weighted_var(
         self,
         lst : list[float],
-        ewma : float,
         alpha : float = None,
         span : int = None) -> float:
 
@@ -136,8 +144,11 @@ class StatisticalCalculations():
         if not(any([span, alpha]) and not all([span, alpha])):
             raise ValueError("Only one of span or alpha may be used")
         
+        ewma : float = self.EWMA(lst, span=span, alpha=alpha)
+        
         if alpha is None:
             alpha : float = 2 / (span + 1)
+
 
         EW_var : float = 0
 
