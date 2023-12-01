@@ -85,27 +85,70 @@ class RiskEstimates():
 
 
 class PositionLimits():
-    def maximum_position(self):
+    def maximum_position(
+            self,
+            number_of_contracts, 
+            open_interest, 
+            pct_of_interest,
+            max_leverage_ratio, 
+            max_forecast, 
+            average_forecast, 
+            annual_stddev,
+            IDM,
+            weight,
+            risk_target,
+            capital,
+            multiplier,
+            price, 
+            fx_rate=1.0,
+            max_forecast_margin=0.5) -> float:
         """Returns the lesser of the max position based on forecast, leverage, and open interest"""
-        return min(self.maximum_position_forecast(), self.maximum_position_leverage(), self.maximum_position_open_interest())
 
-    def maximum_position_forecast(self) -> float:
+        return min(
+            self.maximum_position_forecast(number_of_contracts, max_forecast, average_forecast, IDM, weight, risk_target, multiplier, price, annual_stddev, capital, fx_rate, max_forecast_margin), 
+            self.maximum_position_leverage(number_of_contracts, max_leverage_ratio, capital, multiplier, price, fx_rate), 
+            self.maximum_position_open_interest(number_of_contracts, open_interest, pct_of_interest))
+
+    def maximum_position_forecast(
+            self,
+            number_of_contracts : float,
+            max_forecast : int,
+            average_forecast : int,
+            IDM : float,
+            weight : float,
+            risk_target : float,
+            multiplier : float,
+            price : float,
+            annual_stddev : float,
+            capital : float,
+            fx_rate : float = 1.0,
+            max_forecast_margin : float = 0.50) -> float:
         """Determines maximum position based on maximum forecast"""
-        maximum_position = 0.0
 
-        return maximum_position
+        maximum_position = ((max_forecast / average_forecast) * capital * IDM * weight * risk_target / (multiplier * price * fx_rate * annual_stddev)) * (1 + max_forecast_margin)
 
-    def maximum_position_leverage(self) -> float:
+        return min(maximum_position, number_of_contracts)
+
+    def maximum_position_leverage(
+            self,
+            number_of_contracts : float,
+            max_leverage_ratio : float,
+            capital : float,
+            multiplier : float,
+            price : float,
+            fx_rate : float = 1.0) -> float:
         """Determines maximum position relative to maximum leverage"""
-        maximum_position = 0.0
 
-        return maximum_position
+        return min(number_of_contracts, (max_leverage_ratio * capital) / (multiplier * price * fx_rate))
 
-    def maximum_position_open_interest(self) -> float:
+    def maximum_position_open_interest(
+            self,
+            number_of_contracts : float,
+            open_interest : int,
+            pct_of_interest : float) -> float:
         """Determines maximum positions as a fraction of open interest"""
-        maximum_position = 0.0
 
-        return maximum_position
+        return min(number_of_contracts, open_interest * pct_of_interest)
 
 
 class Volatility():
