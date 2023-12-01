@@ -1,12 +1,15 @@
 import unittest
-from risk_functions import StatisticalCalculations, RiskEstimates, PositionLimits, Volatility, RiskOverlay, Margins, Periods
+from risk_functions import RiskEstimates, PositionLimits, Volatility, RiskOverlay, Margins, Periods
+import statistical_functions as StatisticalCalculations
+from statistical_functions import Periods
 import pandas as pd
 import numpy as np
+
 
 class TestRiskFunctions(unittest.TestCase):
     def setUp(self):
         # Initialize any objects or variables needed for the tests
-        self.stat_calc = StatisticalCalculations()
+        self.stat_calc = StatisticalCalculations
         self.risk_estimates = RiskEstimates()
         self.position_limits = PositionLimits()
         self.volatility = Volatility()
@@ -192,6 +195,11 @@ class TestRiskFunctions(unittest.TestCase):
         result = self.risk_overlay.final_risk_multiplier(self.position_weights, self.returns_matrix)
 
         self.assertEqual(result, expected_result)
+
+    def test_minimum_volatility(self):
+        result = self.volatility.minimum_volatility(1.5, 0.10, 0.20, self.sp500['SP500'].tolist(), 4.0)
+
+        self.assertTrue(result)
 
 
 if __name__ == '__main__':
