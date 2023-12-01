@@ -74,7 +74,7 @@ class TestRiskFunctions(unittest.TestCase):
         # Test the stddev function
         returns = [1, 2, 3]
         expected_result = 1.0
-        result = self.stat_calc.stddev(returns)
+        result = self.stat_calc.std(returns)
         self.assertEqual(result, expected_result)
 
     def test_VAR(self):
