@@ -1,4 +1,3 @@
-
 # Constants for various time units
 BUSINESS_DAYS_IN_YEAR = 256
 WEEKS_PER_YEAR = 52.25
