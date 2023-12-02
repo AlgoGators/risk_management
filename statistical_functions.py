@@ -37,8 +37,13 @@ def EWMA (
         threshold : int = 100) -> float:
     """Returns Exponentially Weighted Moving Average given span"""
 
+    #Carver's fromula
     #@ EWMA(t) = α(1 - α)⁰ * y(t) + α(1 - α)¹ * y(t-1) + α(1-α)² * y(t-2) + ... + α(1-α)ⁿ * y(t-n)
     # where alpha is 2 / (span + 1) & n is the length of the list
+
+    # I prefer to use the standard EWMA instead of Carver's 
+    # as a it results in the mean being the same as the SMA when all the values are equal
+    #@ EWMA(t) = α * y(t) + (1 - α) * EWMA(t-1)
 
     # checks that only one of the variables is given
     if not(any([span, alpha]) and not all([span, alpha])):
@@ -59,7 +64,8 @@ def EWMA (
 
 
     for n in range(threshold, lst_len):
-        ewma += (alpha * (1-alpha)**n * lst[last_IDX - n])
+        ewma = alpha * lst[n] + (1 - alpha) * ewma
+        # ewma += (alpha * (1-alpha)**n * lst[last_IDX - n])
 
     return ewma
 
