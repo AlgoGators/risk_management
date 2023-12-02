@@ -21,7 +21,7 @@ class TestRiskFunctions(unittest.TestCase):
         self.risk_overlay = RiskOverlay()
         self.margins = Margins()
 
-        prices_df = pd.read_csv('unittesting/testing_data.csv')
+        prices_df = pd.read_csv('unittesting/test_data.csv')
 
         sp500_returns = []
         sp500_prices = [x for x in prices_df['SP500'].tolist() if str(x) != 'nan']
