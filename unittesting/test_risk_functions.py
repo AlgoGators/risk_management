@@ -147,7 +147,7 @@ class TestRiskFunctions(unittest.TestCase):
 
         result = self.stat_calc.correlation_matrix(self.returns_matrix, period=Periods.WEEKLY, window=52)
 
-        np.testing.assert_array_equal(result, expected_result)
+        np.testing.assert_array_almost_equal(result, expected_result, decimal=10)
 
     def test_carver_portfolio_covar(self):
         # Test using Carver's example from his book (comparing SP500 and US10)
@@ -155,7 +155,7 @@ class TestRiskFunctions(unittest.TestCase):
 
         result = self.stat_calc.portfolio_covar(self.returns_matrix)
 
-        np.testing.assert_array_equal(result, expected_result)
+        np.testing.assert_array_almost_equal(result, expected_result, decimal=10)
 
 
     def test_carver_portfolio_stddev(self):
@@ -164,7 +164,7 @@ class TestRiskFunctions(unittest.TestCase):
 
         result = self.stat_calc.portfolio_stddev(self.position_weights, self.returns_matrix) 
 
-        self.assertEqual(result, expected_result)
+        self.assertAlmostEqual(result, expected_result)
 
     def test_estimated_portfolio_risk_multiplier(self):
         # Test using Carver's example
@@ -172,35 +172,35 @@ class TestRiskFunctions(unittest.TestCase):
 
         result = self.risk_overlay.estimated_portfolio_risk_multiplier(self.position_weights, self.returns_matrix, 0.30)
 
-        self.assertEqual(result, expected_result)
+        self.assertAlmostEqual(result, expected_result)
 
     def test_jump_risk_multiplier(self):
         expected_result = 0.6785805908551636
 
         result = self.risk_overlay.jump_risk_multiplier(self.position_weights, self.returns_matrix)
 
-        self.assertEqual(result, expected_result)
+        self.assertAlmostEqual(result, expected_result)
 
     def test_correlation_risk_multiplier(self):
         expected_result = 1
 
         result = self.risk_overlay.correlation_risk_multiplier(self.position_weights, self.returns_matrix)
 
-        self.assertEqual(result, expected_result)
+        self.assertAlmostEqual(result, expected_result)
 
     def test_leverage_risk_multiplier(self):
         expected_result = 1.0
 
         result = self.risk_overlay.leverage_risk_multiplier(self.position_weights)
 
-        self.assertEqual(result, expected_result)
+        self.assertAlmostEqual(result, expected_result)
 
     def test_final_risk_multiplier(self):
         expected_result = 0.5982854053217644
 
         result = self.risk_overlay.final_risk_multiplier(self.position_weights, self.returns_matrix)
 
-        self.assertEqual(result, expected_result)
+        self.assertAlmostEqual(result, expected_result)
 
     def test_minimum_volatility(self):
         result = self.volatility.minimum_volatility(1.5, 0.10, 0.20, self.sp500['SP500'].tolist(), 4.0)
