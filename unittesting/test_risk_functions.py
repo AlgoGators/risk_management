@@ -137,7 +137,8 @@ class TestRiskFunctions(unittest.TestCase):
 
         result = self.stat_calc.correlation(self.sp500, self.us10)
 
-        self.assertEqual(result, expected_result)
+        # Need this since the GitHub workflow machine is not as precise as my machine
+        self.assertAlmostEqual(result, expected_result, places=5)
 
 
     def test_carver_portfolio_correlation_matrix(self):
