@@ -27,7 +27,7 @@ class RiskEstimates():
 
         Assumptions:
         -----
-            - No changing in positions over a certain period
+            - No changing in position size over given period
             - Past returns ARE indicative of future results
 
         -----
@@ -68,7 +68,7 @@ class RiskEstimates():
             position_value : a dollar value of the investment(s)
             expected_volatility : expected volatility for the investment value
                 greater volatility => greater max downside
-            period : the period for which we are calculating the max downside risk
+            period (Days): the period for which we are calculating the max downside risk
                 greater period => greater max downside
             alpha : value from (0, 1) exclusive. e.g. 0.1, 0.05, 0.01
                 smaller alpha (i.e. greater level of confidence) => greater max downside
@@ -87,45 +87,65 @@ class RiskEstimates():
 class PositionLimits():
     def maximum_position(
             self,
-            number_of_contracts, 
-            open_interest, 
-            pct_of_interest,
-            max_leverage_ratio, 
-            max_forecast, 
-            average_forecast, 
-            annual_stddev,
-            IDM,
-            weight,
-            risk_target,
+            number_of_contracts,
+            scaled_forecast,
+            average_forecast,
+            max_forecast,
+            max_leverage_ratio,
             capital,
-            multiplier,
-            price, 
-            fx_rate=1.0,
+            notional_exposure_per_contract,
+            open_interest,
+            max_open_interest,
             max_forecast_margin=0.5) -> float:
         """Returns the lesser of the max position based on forecast, leverage, and open interest"""
 
         return min(
-            self.maximum_position_forecast(number_of_contracts, max_forecast, average_forecast, IDM, weight, risk_target, multiplier, price, annual_stddev, capital, fx_rate, max_forecast_margin), 
-            self.maximum_position_leverage(number_of_contracts, max_leverage_ratio, capital, multiplier, price, fx_rate), 
-            self.maximum_position_open_interest(number_of_contracts, open_interest, pct_of_interest))
+            self.maximum_position_forecast(number_of_contracts, scaled_forecast, average_forecast, max_forecast, max_forecast_margin), 
+            self.maximum_position_leverage(number_of_contracts, max_leverage_ratio, capital, notional_exposure_per_contract), 
+            self.maximum_position_open_interest(number_of_contracts, open_interest, max_open_interest))
 
     def maximum_position_forecast(
             self,
             number_of_contracts : float,
-            max_forecast : int,
-            average_forecast : int,
+            capital : float,
             IDM : float,
-            weight : float,
+            instrument_weight : float,
             risk_target : float,
             multiplier : float,
             price : float,
-            annual_stddev : float,
-            capital : float,
-            fx_rate : float = 1.0,
+            fx_rate : float,
+            stddev : float,
+            average_forecast : int,
+            max_forecast : int,
             max_forecast_margin : float = 0.50) -> float:
-        """Determines maximum position based on maximum forecast"""
+        """
+        Determines maximum position based on maximum forecast
+        
+        Parameters:
+        ---
+            number_of_contracts : float
+                number of contracts forecasted by the algorithm
+            scaled_forecast : float
+                the scaled forecast created by the algorithm
+            average_forecast : int
+                average absolute forecast (Carver uses 10)
+            max_forecast : int
+                maximum absolute forecast (Carver uses 20)
+            max_forecast_margin : float
+                the margin around the max forecasted position acceptable 
+                (Carver uses 50% so the position can exceed the max forecast by 50%)
+        ---
+        """
 
-        maximum_position = ((max_forecast / average_forecast) * capital * IDM * weight * risk_target / (multiplier * price * fx_rate * annual_stddev)) * (1 + max_forecast_margin)
+        #@                             zmax_forecast * capital * IDM * instrument_weight * risk_target
+        #@ max_position_forecast   =   --------------------------------------------------------
+        #@                             average_forecast * multiplier * price * fx_rate * stddev
+
+        max_forecast_ratio = max_forecast / average_forecast
+
+        max_position_forecast = max_forecast_ratio * (capital * IDM * instrument_weight * risk_target) / (multiplier * price * fx_rate * stddev)
+
+        maximum_position = max_position_forecast * (1 + max_forecast_margin)
 
         return min(maximum_position, number_of_contracts)
 
@@ -134,21 +154,48 @@ class PositionLimits():
             number_of_contracts : float,
             max_leverage_ratio : float,
             capital : float,
-            multiplier : float,
-            price : float,
-            fx_rate : float = 1.0) -> float:
-        """Determines maximum position relative to maximum leverage"""
+            notional_exposure_per_contract : float) -> float:
+        """
+        Determines maximum position relative to maximum leverage
+        
+        Parameters:
+        ---
+            number_of_contracts : float
+                number of contracts forecasted by the algorithm
+            max_leverage_ratio : float
+                the greatest level of leverage acceptable for any single position
+            capital : float
+                the amount of capital expected to be allocated to this position
+            notional_exposure_per_contract : float 
+                equals the multiplier * price * fx_rate
+        ---
+        """
 
-        return min(number_of_contracts, (max_leverage_ratio * capital) / (multiplier * price * fx_rate))
+        max_leverage = max_leverage_ratio * capital / notional_exposure_per_contract
+
+        return min(number_of_contracts, max_leverage)
 
     def maximum_position_open_interest(
             self,
             number_of_contracts : float,
             open_interest : int,
-            pct_of_interest : float) -> float:
-        """Determines maximum positions as a fraction of open interest"""
+            max_open_interest : float = 0.01) -> float:
+        """
+        Determines maximum acceptable position in order to not exceed a certain % of open interest
+        
+        Parameters:
+        ---
+            number_of_contracts : float
+                number of contracts forecasted by the algorithm
+            open_interest : int
+                the open interest for a given instrument
+            max_open_interest : float
+                the max acceptable % of open interest a position could be
+        ---
 
-        return min(number_of_contracts, open_interest * pct_of_interest)
+        """
+
+        return min(number_of_contracts, open_interest * max_open_interest)
 
 
 class Volatility():
@@ -156,18 +203,34 @@ class Volatility():
     def minimum_volatility(
             self,
             IDM : float,
-            weight : float,
+            instrument_weight : float,
             risk_target : float,
-            instrument_returns : list[float], 
+            instrument_returns : list[float],
             maximum_leverage : float) -> bool:
-        """Returns true if the returns for a given instrument meets a minimum level of volatility, false if not"""
+        """
+        Returns true if the returns for a given instrument meets a minimum level of volatility, false if not
+        
+        Parameters:
+        ---
+            IDM : float
+                instrument diversification multiplier
+            instrument_weight : float
+                the weight of the instrument in the portfolio (capital allocated to the instrument / total capital)
+            risk_target : float
+                the target risk for the portfolio
+            instrument_returns : list[float]
+                the returns for a given instrument
+            maximum_leverage : float
+                the max acceptable leverage for a given instrument
+        ---
+        """
 
-        minimum_volatility = (2 * IDM * weight * risk_target) / maximum_leverage
+        minimum_volatility = (2 * IDM * instrument_weight * risk_target) / maximum_leverage
 
         standard_deviation = StatisticalCalculations.std(instrument_returns, annualize=True)
 
         if (standard_deviation < minimum_volatility):
-            return False        
+            return False
 
         return True
 
@@ -181,9 +244,12 @@ class RiskOverlay():
         """
         Parameters:
         -----
-            position_weights : DataFrame, columns are the weight for each instrument
-            position_percent_returns : DataFrame, each column are % returns for each ticker
-            max_portfolio_risk : max risk for the portfolio (should technically be 99th percentile of annualized risk)
+            position_weights : DataFrame
+                columns are the weight for each instrument, use get_position_weight to get each weight
+            position_percent_returns : DataFrame
+                each column are % returns for each ticker
+            max_portfolio_risk : float
+                max risk for the portfolio (should technically be 99th percentile of annualized risk)
         -----
         
         """
@@ -280,7 +346,19 @@ class RiskOverlay():
             position_weights : pd.DataFrame,
             position_percent_returns : pd.DataFrame) -> float:
         
+        """
+        Parameters:
+        ---
+            position_weights : pd.DataFrame
+                each column should have the position weight for each ticker
+                NOTE this is different from instrument weights:
+                this weight is the notional exposure of the instrument divided by the total portfolio capital
+        ---
+        
+        """
+        
         return min(self.estimated_portfolio_risk_multiplier(position_weights, position_percent_returns), self.jump_risk_multiplier(position_weights, position_percent_returns), self.correlation_risk_multiplier(position_weights, position_percent_returns), self.leverage_risk_multiplier(position_weights))
+
 
 class MarginLevels(float, Enum):
     """Margin Level Concern and Upper Limit"""
