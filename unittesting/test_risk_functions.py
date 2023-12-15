@@ -15,7 +15,7 @@ class TestRiskFunctions(unittest.TestCase):
     def setUp(self):
         # Initialize any objects or variables needed for the tests
         self.stat_calc = StatisticalCalculations
-        self.risk_estimates = RiskEstimates()
+        self.risk_estimates = RiskEstimates
         self.position_limits = PositionLimits()
         self.volatility = Volatility()
         self.risk_overlay = RiskOverlay()
@@ -207,6 +207,58 @@ class TestRiskFunctions(unittest.TestCase):
 
         self.assertTrue(result)
 
+    def test_VaR_Historical(self):
+        expected_result = 7895.112258922633
+
+        result = self.risk_estimates.VaR_Historical(100_000, self.sp500['SP500'].tolist())
+
+        self.assertAlmostEqual(result, expected_result)
+
+    def test_VaR_Parametrc(self):
+        expected_result = 6503.474483239808
+
+        result = self.risk_estimates.VaR_Parametric(100_000, 0.10, 10)
+
+        self.assertAlmostEqual(result, expected_result)
+
+    def test_max_position_forecast(self):
+        IDM = 2.0
+        instrument_weight = 0.10
+        risk_target = 0.20
+        annual_stddev = 0.011
+        capital = 500_000
+        scaled_forecast = 10
+        average_forecast = 10
+        fx_rate = 1.0
+        price = 97
+        multiplier = 2500
+
+        number_of_contracts = scaled_forecast * capital * IDM * instrument_weight * risk_target / (average_forecast * multiplier * price * fx_rate * annual_stddev)
+
+        result = self.position_limits.maximum_position_forecast(number_of_contracts, scaled_forecast, average_forecast, max_forecast=20)
+
+        # expect the minimum of the two numbers to be the number of contracts since the max forecast is less
+
+        self.assertAlmostEqual(result, number_of_contracts)
+
+    def test_max_position_leverage(self):
+        fx_rate = 1.0
+        price = 97
+        multiplier = 2500
+
+        notional_exposure_per_contract = price * multiplier * fx_rate
+
+        capital = 500_000
+
+        max_leverage_ratio = 2.0
+
+        number_of_contracts = 50
+        
+        result = self.position_limits.maximum_position_leverage(number_of_contracts, max_leverage_ratio, capital, notional_exposure_per_contract)
+
+        expected_result = 4.123711340206185
+
+        self.assertAlmostEqual(result, expected_result) 
 
 if __name__ == '__main__':
     unittest.main(failfast=True)
