@@ -4,7 +4,8 @@ import numpy as np
 def get_daily_returns(
     price_df : pd.DataFrame,
     date_column : str = "Date",
-    price_column : str = "Close") -> pd.DataFrame:
+    price_column : str = "Close",
+    return_column : str = "Returns") -> pd.DataFrame:
     """
     Returns a dataframe of daily % returns with date as index
     
@@ -29,7 +30,7 @@ def get_daily_returns(
     for i, price in enumerate(prices[1:]):
         returns.append((price - prices[i]) / prices[i])
         
-    returns_df = pd.DataFrame.from_dict({"Date" : dates, "Returns" : returns})
+    returns_df = pd.DataFrame.from_dict({"Date" : dates, return_column : returns})
     
     returns_df = returns_df.set_index("Date")
     
