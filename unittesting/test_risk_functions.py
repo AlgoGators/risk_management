@@ -1,7 +1,7 @@
 import sys
 
 # Add parent directory to path
-sys.path.append('../risk-analysis')
+sys.path.append('../risk_analysis')
 
 import unittest
 from risk_functions import RiskEstimates, PositionLimits, Volatility, RiskOverlay, Margins, Periods
