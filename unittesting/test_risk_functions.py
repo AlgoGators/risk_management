@@ -235,7 +235,7 @@ class TestRiskFunctions(unittest.TestCase):
 
         number_of_contracts = scaled_forecast * capital * IDM * instrument_weight * risk_target / (average_forecast * multiplier * price * fx_rate * annual_stddev)
 
-        result = self.position_limits.maximum_position_forecast(number_of_contracts, scaled_forecast, average_forecast, max_forecast=20)
+        result = self.position_limits.maximum_position_forecast(number_of_contracts, capital, IDM, instrument_weight, risk_target, multiplier, price, fx_rate, annual_stddev, average_forecast, max_forecast=20)
 
         # expect the minimum of the two numbers to be the number of contracts since the max forecast is less
 
