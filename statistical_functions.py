@@ -1,8 +1,14 @@
 import numpy as np
 import pandas as pd
 from math import sqrt
-from constants import BUSINESS_DAYS_IN_YEAR, BUSINESS_DAYS_IN_TEN_YEARS
 from enum import Enum
+
+# Ugly but it allows keeping the same import statement across submodules and parent directories
+try:
+    from .constants import BUSINESS_DAYS_IN_YEAR, BUSINESS_DAYS_IN_TEN_YEARS
+except ImportError:
+    from constants import BUSINESS_DAYS_IN_YEAR, BUSINESS_DAYS_IN_TEN_YEARS
+
 
 
 class Periods(Enum):

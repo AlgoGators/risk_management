@@ -4,10 +4,18 @@ from statistics import NormalDist
 from math import sqrt
 import numpy as np
 import pandas as pd
-from constants import BUSINESS_DAYS_IN_YEAR, BUSINESS_DAYS_IN_TEN_YEARS
 from enum import Enum
-import statistical_functions as StatisticalCalculations
-from statistical_functions import Periods
+
+# Ugly but it allows keeping the same import statement across submodules and parent directories
+try:
+    from .constants import BUSINESS_DAYS_IN_YEAR, BUSINESS_DAYS_IN_TEN_YEARS
+    from . import statistical_functions as StatisticalCalculations
+    from .statistical_functions import Periods
+except ImportError:
+    from constants import BUSINESS_DAYS_IN_YEAR, BUSINESS_DAYS_IN_TEN_YEARS
+    import statistical_functions as StatisticalCalculations
+    from statistical_functions import Periods
+
 
 
 # TODO
