@@ -88,7 +88,10 @@ class PositionLimits():
     def maximum_position(
             self,
             number_of_contracts,
-            scaled_forecast,
+            IDM, 
+            instrument_weight, 
+            risk_target, 
+            annualized_stddev,
             average_forecast,
             max_forecast,
             max_leverage_ratio,
@@ -100,7 +103,7 @@ class PositionLimits():
         """Returns the lesser of the max position based on forecast, leverage, and open interest"""
 
         return min(
-            self.maximum_position_forecast(number_of_contracts, scaled_forecast, average_forecast, max_forecast, max_forecast_margin), 
+            self.maximum_position_forecast(number_of_contracts, capital, IDM, instrument_weight, risk_target, notional_exposure_per_contract, annualized_stddev, average_forecast, max_forecast), 
             self.maximum_position_leverage(number_of_contracts, max_leverage_ratio, capital, notional_exposure_per_contract), 
             self.maximum_position_open_interest(number_of_contracts, open_interest, max_open_interest))
 
@@ -111,9 +114,7 @@ class PositionLimits():
             IDM : float,
             instrument_weight : float,
             risk_target : float,
-            multiplier : float,
-            price : float,
-            fx_rate : float,
+            notional_exposure_per_contract : float,
             stddev : float,
             average_forecast : int,
             max_forecast : int,
@@ -139,11 +140,11 @@ class PositionLimits():
 
         #@                             zmax_forecast * capital * IDM * instrument_weight * risk_target
         #@ max_position_forecast   =   --------------------------------------------------------
-        #@                             average_forecast * multiplier * price * fx_rate * stddev
+        #@                             average_forecast * notional_exposure_per_contract * stddev
 
         max_forecast_ratio = max_forecast / average_forecast
 
-        max_position_forecast = max_forecast_ratio * (capital * IDM * instrument_weight * risk_target) / (multiplier * price * fx_rate * stddev)
+        max_position_forecast = max_forecast_ratio * (capital * IDM * instrument_weight * risk_target) / (notional_exposure_per_contract * stddev)
 
         maximum_position = max_position_forecast * (1 + max_forecast_margin)
 
