@@ -1,5 +1,4 @@
 import pandas as pd
-import numpy as np
 
 def get_daily_returns(
     price_df : pd.DataFrame,

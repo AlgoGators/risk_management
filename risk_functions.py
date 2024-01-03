@@ -8,11 +8,11 @@ from enum import Enum
 
 # Ugly but it allows keeping the same import statement across submodules and parent directories
 try:
-    from .constants import BUSINESS_DAYS_IN_YEAR, BUSINESS_DAYS_IN_TEN_YEARS
+    from .constants import BUSINESS_DAYS_IN_YEAR
     from . import statistical_functions as StatisticalCalculations
     from .statistical_functions import Periods
 except ImportError:
-    from constants import BUSINESS_DAYS_IN_YEAR, BUSINESS_DAYS_IN_TEN_YEARS
+    from constants import BUSINESS_DAYS_IN_YEAR
     import statistical_functions as StatisticalCalculations
     from statistical_functions import Periods
 
