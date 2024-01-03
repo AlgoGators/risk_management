@@ -8,7 +8,7 @@ from general_functions import get_daily_returns
 import pandas as pd
 import numpy as np
 
-class TestRiskFunctions(unittest.TestCase):
+class TestGeneralFunctions(unittest.TestCase):
     def setUp(self):
         self.SP500_df = pd.read_csv('unittesting/_ES_Data.csv')
 

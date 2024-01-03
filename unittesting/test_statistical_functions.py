@@ -8,7 +8,7 @@ import statistical_functions as StatisticalCalculations
 import numpy as np
 import pandas as pd
 
-class TestRiskFunctions(unittest.TestCase):
+class TestStatisticalCalculation(unittest.TestCase):
     def setUp(self):
         # Initialize any objects or variables needed for the tests
         self.stat_calc = StatisticalCalculations
