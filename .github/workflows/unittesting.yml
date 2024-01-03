@@ -21,3 +21,9 @@ jobs:
 
             - name: Unittesting
               run: python unittesting/test_risk_functions.py
+
+            - name: Unittesting
+              run: python unittesting/test_general_functions.py
+
+            - name: Unittesting
+              run: python unittesting/test_statistical_functions.py
