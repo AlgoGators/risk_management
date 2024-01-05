@@ -106,14 +106,14 @@ class PositionLimits():
             capital,
             notional_exposure_per_contract,
             open_interest,
-            max_open_interest,
+            max_pct_of_open_interest,
             max_forecast_margin=0.5) -> float:
         """Returns the lesser of the max position based on forecast, leverage, and open interest"""
 
         return min(
-            self.maximum_position_forecast(number_of_contracts, capital, IDM, instrument_weight, risk_target, notional_exposure_per_contract, annualized_stddev, average_forecast, max_forecast), 
+            self.maximum_position_forecast(number_of_contracts, capital, IDM, instrument_weight, risk_target, notional_exposure_per_contract, annualized_stddev, average_forecast, max_forecast, max_forecast_margin=max_forecast_margin), 
             self.maximum_position_leverage(number_of_contracts, max_leverage_ratio, capital, notional_exposure_per_contract), 
-            self.maximum_position_open_interest(number_of_contracts, open_interest, max_open_interest))
+            self.maximum_position_open_interest(number_of_contracts, open_interest, max_pct_of_open_interest))
 
     def maximum_position_forecast(
             self,
@@ -188,7 +188,7 @@ class PositionLimits():
             self,
             number_of_contracts : float,
             open_interest : int,
-            max_open_interest : float = 0.01) -> float:
+            max_pct_of_open_interest : float = 0.01) -> float:
         """
         Determines maximum acceptable position in order to not exceed a certain % of open interest
         
@@ -204,7 +204,7 @@ class PositionLimits():
 
         """
 
-        return min(number_of_contracts, open_interest * max_open_interest)
+        return min(number_of_contracts, open_interest * max_pct_of_open_interest)
 
 
 class Volatility():
