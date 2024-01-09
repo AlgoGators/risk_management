@@ -389,7 +389,8 @@ class RiskOverlay():
     def final_risk_multiplier(
             self,
             position_weights : pd.DataFrame,
-            position_percent_returns : pd.DataFrame) -> float:
+            position_percent_returns : pd.DataFrame,
+            max_portfolio_leverage : int) -> float:
         
         """
         Parameters:
@@ -402,7 +403,7 @@ class RiskOverlay():
         
         """
         
-        return min(self.get_estimated_portfolio_risk_multiplier(position_weights, position_percent_returns), self.get_jump_risk_multiplier(position_weights, position_percent_returns), self.get_correlation_risk_multiplier(position_weights, position_percent_returns), self.get_leverage_risk_multiplier(position_weights))
+        return min(self.get_estimated_portfolio_risk_multiplier(position_weights, position_percent_returns), self.get_jump_risk_multiplier(position_weights, position_percent_returns), self.get_correlation_risk_multiplier(position_weights, position_percent_returns), self.get_leverage_risk_multiplier(position_weights, max_portfolio_leverage))
 
 
 class MarginLevels(float, Enum):
