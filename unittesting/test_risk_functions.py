@@ -75,14 +75,14 @@ class TestRiskFunctions(unittest.TestCase):
     def test_leverage_risk_multiplier(self):
         expected_result = 1.0
 
-        result = self.risk_overlay.get_leverage_risk_multiplier(self.position_weights)
+        result = self.risk_overlay.get_leverage_risk_multiplier(self.position_weights, 20)
 
         self.assertAlmostEqual(result, expected_result)
 
     def test_final_risk_multiplier(self):
         expected_result = 0.5982854053217644
 
-        result = self.risk_overlay.final_risk_multiplier(self.position_weights, self.returns_matrix)
+        result = self.risk_overlay.final_risk_multiplier(self.position_weights, self.returns_matrix, 20)
 
         self.assertAlmostEqual(result, expected_result)
 
