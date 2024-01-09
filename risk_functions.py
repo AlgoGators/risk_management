@@ -159,7 +159,7 @@ class PositionLimits():
 
         min_position_of_forecast = min(position_at_max_forecast, number_of_contracts)
 
-        if (min_position_of_forecast < 1):
+        if (min_position_of_forecast < number_of_contracts):
             logging.warning(f"The minimum position at max forecast, {min_position_of_forecast}, is less than the current position, {number_of_contracts}.")
 
         return min_position_of_forecast
