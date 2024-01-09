@@ -5,6 +5,7 @@ from math import sqrt
 import numpy as np
 import pandas as pd
 from enum import Enum
+import logging
 
 # Ugly but it allows keeping the same import statement across submodules and parent directories
 try:
@@ -154,9 +155,14 @@ class PositionLimits():
 
         max_position_forecast = max_forecast_ratio * (capital * IDM * instrument_weight * risk_target) / (notional_exposure_per_contract * stddev)
 
-        maximum_position = max_position_forecast * (1 + max_forecast_margin)
+        position_at_max_forecast = max_position_forecast * (1 + max_forecast_margin)
 
-        return min(maximum_position, number_of_contracts)
+        min_position_of_forecast = min(position_at_max_forecast, number_of_contracts)
+
+        if (min_position_of_forecast < 1):
+            logging.warning(f"The minimum position at max forecast, {min_position_of_forecast}, is less than the current position, {number_of_contracts}.")
+
+        return min_position_of_forecast
 
     def maximum_position_leverage(
             self,
@@ -180,9 +186,14 @@ class PositionLimits():
         ---
         """
 
-        max_leverage = max_leverage_ratio * capital / notional_exposure_per_contract
+        position_at_max_leverage = max_leverage_ratio * capital / notional_exposure_per_contract
+    
+        min_position_of_leverage = min(position_at_max_leverage, number_of_contracts)
 
-        return min(number_of_contracts, max_leverage)
+        if (min_position_of_leverage < number_of_contracts):
+            logging.warning(f"The minimum position at max leverage, {min_position_of_leverage}, is less than the current position, {number_of_contracts}.")
+
+        return min_position_of_leverage
 
     def maximum_position_open_interest(
             self,
@@ -204,7 +215,12 @@ class PositionLimits():
 
         """
 
-        return min(number_of_contracts, open_interest * max_pct_of_open_interest)
+        min_position_of_interest = min(open_interest * max_pct_of_open_interest, number_of_contracts)
+
+        if (min_position_of_interest < number_of_contracts):
+            logging.warning(f"The minimum position at max open interest, {min_position_of_interest}, is less than the current position, {number_of_contracts}.")
+
+        return min_position_of_interest
 
 
 class Volatility():
