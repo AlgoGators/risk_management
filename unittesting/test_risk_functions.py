@@ -54,28 +54,28 @@ class TestRiskFunctions(unittest.TestCase):
         # Test using Carver's example
         expected_result = 0.5982854053217644
 
-        result = self.risk_overlay.estimated_portfolio_risk_multiplier(self.position_weights, self.returns_matrix, 0.30)
+        result = self.risk_overlay.get_estimated_portfolio_risk_multiplier(self.position_weights, self.returns_matrix, 0.30)
 
         self.assertAlmostEqual(result, expected_result)
 
     def test_jump_risk_multiplier(self):
         expected_result = 0.6785805908551636
 
-        result = self.risk_overlay.jump_risk_multiplier(self.position_weights, self.returns_matrix)
+        result = self.risk_overlay.get_jump_risk_multiplier(self.position_weights, self.returns_matrix)
 
         self.assertAlmostEqual(result, expected_result)
 
     def test_correlation_risk_multiplier(self):
         expected_result = 1
 
-        result = self.risk_overlay.correlation_risk_multiplier(self.position_weights, self.returns_matrix)
+        result = self.risk_overlay.get_correlation_risk_multiplier(self.position_weights, self.returns_matrix)
 
         self.assertAlmostEqual(result, expected_result)
 
     def test_leverage_risk_multiplier(self):
         expected_result = 1.0
 
-        result = self.risk_overlay.leverage_risk_multiplier(self.position_weights)
+        result = self.risk_overlay.get_leverage_risk_multiplier(self.position_weights)
 
         self.assertAlmostEqual(result, expected_result)
 

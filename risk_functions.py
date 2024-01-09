@@ -261,7 +261,7 @@ class Volatility():
 
 
 class RiskOverlay():
-    def estimated_portfolio_risk_multiplier(
+    def get_estimated_portfolio_risk_multiplier(
             self,
             position_weights : pd.DataFrame,
             position_percent_returns : pd.DataFrame,
@@ -281,10 +281,15 @@ class RiskOverlay():
         
         portfolio_standard_deviation = StatisticalCalculations.portfolio_stddev(position_weights, position_percent_returns)
 
-        return min(1, max_portfolio_risk / portfolio_standard_deviation)
+        estimated_portfolio_risk_multiplier = min(1, max_portfolio_risk / portfolio_standard_deviation)
+
+        if (estimated_portfolio_risk_multiplier < 1):
+            logging.warning(f"The estimated portfolio risk multiplier is {estimated_portfolio_risk_multiplier}, which is less than 1.")
+        
+        return estimated_portfolio_risk_multiplier
 
 
-    def jump_risk_multiplier(
+    def get_jump_risk_multiplier(
             self,
             position_weights : pd.DataFrame,
             position_percent_returns : pd.DataFrame,
@@ -317,10 +322,15 @@ class RiskOverlay():
 
         radicand : float = np.dot(np.dot(weights, covariance_matrix), weights_T)
 
-        return min(1, max_portfolio_risk / sqrt(radicand))
+        jump_risk_multiplier = min(1, max_portfolio_risk / sqrt(radicand))
+
+        if (jump_risk_multiplier < 1):
+            logging.warning(f"The jump risk multiplier is {jump_risk_multiplier}, which is less than 1.")
+
+        return jump_risk_multiplier
     
 
-    def correlation_risk_multiplier(
+    def get_correlation_risk_multiplier(
             self,
             position_weights : pd.DataFrame,
             position_percent_returns : pd.DataFrame,
@@ -341,10 +351,15 @@ class RiskOverlay():
 
         standard_deviation = np.sum(risk_lst)
 
-        return min(1, max_portfolio_risk / standard_deviation)
+        correlation_risk_multiplier = min(1, max_portfolio_risk / standard_deviation)
+
+        if (correlation_risk_multiplier < 1):
+            logging.warning(f"The correlation risk multiplier is {correlation_risk_multiplier}, which is less than 1.")
+
+        return correlation_risk_multiplier
     
 
-    def leverage_risk_multiplier(
+    def get_leverage_risk_multiplier(
             self,
             position_weights : pd.DataFrame,
             max_portfolio_leverage : float = 20) -> float:
@@ -363,7 +378,12 @@ class RiskOverlay():
 
         leverage = np.sum(absolute_weights)
 
-        return min(1, max_portfolio_leverage, leverage)
+        leverage_risk_multiplier = min(1, max_portfolio_leverage / leverage)
+
+        if (leverage_risk_multiplier < 1):
+            logging.warning(f"The leverage risk multiplier is {leverage_risk_multiplier}, which is less than 1.")
+
+        return leverage_risk_multiplier
 
 
     def final_risk_multiplier(
@@ -382,7 +402,7 @@ class RiskOverlay():
         
         """
         
-        return min(self.estimated_portfolio_risk_multiplier(position_weights, position_percent_returns), self.jump_risk_multiplier(position_weights, position_percent_returns), self.correlation_risk_multiplier(position_weights, position_percent_returns), self.leverage_risk_multiplier(position_weights))
+        return min(self.get_estimated_portfolio_risk_multiplier(position_weights, position_percent_returns), self.get_jump_risk_multiplier(position_weights, position_percent_returns), self.get_correlation_risk_multiplier(position_weights, position_percent_returns), self.get_leverage_risk_multiplier(position_weights))
 
 
 class MarginLevels(float, Enum):
