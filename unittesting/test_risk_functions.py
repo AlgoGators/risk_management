@@ -4,7 +4,8 @@ import sys
 sys.path.append('../risk_analysis')
 
 import unittest
-from risk_functions import RiskEstimates, PositionLimits, Volatility, RiskOverlay, Margins, Periods
+from risk_functions import PositionLimits, Volatility, RiskOverlay, Margins, Periods
+from risk_reporting import RiskEstimates
 from statistical_functions import Periods
 import pandas as pd
 import numpy as np
