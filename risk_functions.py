@@ -24,6 +24,9 @@ def leverage_ratio(portfolio):
 
 
 class PositionLimits():
+    def __init__(self, instrument_name : str):
+        self.instrument_name : str = instrument_name
+
     def maximum_position(
             self,
             number_of_contracts,
@@ -87,12 +90,12 @@ class PositionLimits():
 
         position_at_max_forecast = max_position_forecast * (1 + max_forecast_margin)
 
-        min_position_of_forecast = min(position_at_max_forecast, number_of_contracts)
+        max_position_of_forecast = min(position_at_max_forecast, number_of_contracts)
 
-        if (min_position_of_forecast < number_of_contracts):
-            logging.warning(f"The minimum position at max forecast, {min_position_of_forecast}, is less than the current position, {number_of_contracts}.")
+        if (max_position_of_forecast < number_of_contracts):
+            logging.warning(f"Instrument: {self.instrument_name} - The maximum position at max forecast, {max_position_of_forecast}, is less than the current position, {number_of_contracts}.")
 
-        return min_position_of_forecast
+        return max_position_of_forecast
 
     def maximum_position_leverage(
             self,
@@ -118,12 +121,12 @@ class PositionLimits():
 
         position_at_max_leverage = max_leverage_ratio * capital / notional_exposure_per_contract
     
-        min_position_of_leverage = min(position_at_max_leverage, number_of_contracts)
+        max_position_of_leverage = min(position_at_max_leverage, number_of_contracts)
 
-        if (min_position_of_leverage < number_of_contracts):
-            logging.warning(f"The minimum position at max leverage, {min_position_of_leverage}, is less than the current position, {number_of_contracts}.")
+        if (max_position_of_leverage < number_of_contracts):
+            logging.warning(f"Instrument: {self.instrument_name} - The maximum position at max leverage, {max_position_of_leverage}, is less than the current position, {number_of_contracts}.")
 
-        return min_position_of_leverage
+        return max_position_of_leverage
 
     def maximum_position_open_interest(
             self,
@@ -145,12 +148,12 @@ class PositionLimits():
 
         """
 
-        min_position_of_interest = min(open_interest * max_pct_of_open_interest, number_of_contracts)
+        max_position_of_interest = min(open_interest * max_pct_of_open_interest, number_of_contracts)
 
-        if (min_position_of_interest < number_of_contracts):
-            logging.warning(f"The minimum position at max open interest, {min_position_of_interest}, is less than the current position, {number_of_contracts}.")
+        if (max_position_of_interest < number_of_contracts):
+            logging.warning(f"Instrument: {self.instrument_name} - The maximum position at max open interest, {max_position_of_interest}, is less than the current position, {number_of_contracts}.")
 
-        return min_position_of_interest
+        return max_position_of_interest
 
 
 class Volatility():

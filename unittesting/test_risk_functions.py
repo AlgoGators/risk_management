@@ -15,7 +15,7 @@ class TestRiskFunctions(unittest.TestCase):
     def setUp(self):
         # Initialize any objects or variables needed for the tests
         self.risk_estimates = RiskEstimates
-        self.position_limits = PositionLimits()
+        self.position_limits = PositionLimits(instrument_name='SP500')
         self.volatility = Volatility()
         self.risk_overlay = RiskOverlay()
         self.margins = Margins()
