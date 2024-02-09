@@ -16,7 +16,7 @@ class TestRiskFunctions(unittest.TestCase):
         # Initialize any objects or variables needed for the tests
         self.risk_estimates = RiskEstimates
         self.volatility = Volatility()
-        self.risk_overlay = RiskOverlay()
+
         self.margins = Margins()
 
         self.total_positions_df = pd.read_csv('unittesting/test_data/total_portfolio_positions.csv', index_col=0)
@@ -24,6 +24,47 @@ class TestRiskFunctions(unittest.TestCase):
         self.notional_exposure_df = pd.read_csv('unittesting/test_data/notional_exposure.csv', index_col=0)
         self.standard_deviation_df = pd.read_csv('unittesting/test_data/standard_deviation.csv', index_col=0)
 
+        self.capital = 500_000        
+
+        self.position_weights = self.notional_exposure_df / self.capital
+
+        self.position_percent_returns = pd.read_csv('unittesting/test_data/percent_returns.csv', index_col=0)
+
+        # prices_df = pd.read_csv('unittesting/test_data.csv')
+
+        # sp500_returns = []
+        # sp500_prices = [x for x in prices_df['SP500'].tolist() if str(x) != 'nan']
+
+        # for i in range(1, len(sp500_prices)):
+        #     sp500_returns.append((sp500_prices[i] - sp500_prices[i-1]) / sp500_prices[i-1])
+        
+        # dates1 = [x for x in prices_df['date1'].tolist() if str(x) != 'nan']
+
+        # self.sp500 = pd.DataFrame.from_dict({"Date" : dates1[1:],
+        #          "SP500" : sp500_returns})
+
+        # us10_returns = []
+        # us10_prices = [x for x in prices_df['US10'].tolist() if str(x) != 'nan']
+
+        # for i in range(1, len(us10_prices)):
+        #     us10_returns.append((us10_prices[i] - us10_prices[i-1]) / us10_prices[i-1])
+
+        # dates2 = [x for x in prices_df['date2'].tolist() if str(x) != 'nan']
+
+        # self.us10 = pd.DataFrame.from_dict({"Date" : dates2[1:],
+        #          "US10" : us10_returns})
+        
+        # self.returns_matrix = pd.merge(self.sp500, self.us10, on='Date', how='inner')
+        # self.returns_matrix = self.returns_matrix.set_index('Date')
+
+        # position_weights_dct = {'SP500' : [-2.1], 'US10' : [1.68]}
+
+        # self.position_weights = pd.DataFrame().from_dict(position_weights_dct)
+
+    # def test_total_portfolio_risk(self):
+
+    def test_position_risk(self):
+        print("Position Risk1")
         self.position_limits = PositionLimits(
             total_positions_df=self.total_positions_df, 
             standard_deviation_df=self.standard_deviation_df,
@@ -35,45 +76,25 @@ class TestRiskFunctions(unittest.TestCase):
             average_forecast=10,
             max_forecast=20,
             max_leverage_ratio=2.0,
-            capital=500_000,
+            capital=self.capital,
             max_pct_of_open_interest=0.01,
             max_forecast_margin=0.50)
 
-        prices_df = pd.read_csv('unittesting/test_data.csv')
+        print(self.position_limits.get_risk_adjusted_positions())
+        print("Position Risk2")
 
-        sp500_returns = []
-        sp500_prices = [x for x in prices_df['SP500'].tolist() if str(x) != 'nan']
+    # def test_test(self):
+    #     print("Test")
 
-        for i in range(1, len(sp500_prices)):
-            sp500_returns.append((sp500_prices[i] - sp500_prices[i-1]) / sp500_prices[i-1])
-        
-        dates1 = [x for x in prices_df['date1'].tolist() if str(x) != 'nan']
+    def test_portfolio_risk(self):
+        print("Portfolio Risk1")
+        self.risk_overlay = RiskOverlay(
+            total_positions_df=self.total_positions_df,
+            position_weights=self.position_weights,
+            position_percent_returns = self.position_percent_returns)
 
-        self.sp500 = pd.DataFrame.from_dict({"Date" : dates1[1:],
-                 "SP500" : sp500_returns})
-
-        us10_returns = []
-        us10_prices = [x for x in prices_df['US10'].tolist() if str(x) != 'nan']
-
-        for i in range(1, len(us10_prices)):
-            us10_returns.append((us10_prices[i] - us10_prices[i-1]) / us10_prices[i-1])
-
-        dates2 = [x for x in prices_df['date2'].tolist() if str(x) != 'nan']
-
-        self.us10 = pd.DataFrame.from_dict({"Date" : dates2[1:],
-                 "US10" : us10_returns})
-        
-        self.returns_matrix = pd.merge(self.sp500, self.us10, on='Date', how='inner')
-        self.returns_matrix = self.returns_matrix.set_index('Date')
-
-        position_weights_dct = {'SP500' : [-2.1], 'US10' : [1.68]}
-
-        self.position_weights = pd.DataFrame().from_dict(position_weights_dct)
-
-    # def test_total_portfolio_risk(self):
-
-    def test_position_risk(self):
-        self.position_limits.get_risk_adjusted_positions()
+        print(self.risk_overlay.get_risk_adjusted_positions())
+        print("Portfolio Risk2")
 
     # def test_estimated_portfolio_risk_multiplier(self):
     #     # Test using Carver's example
