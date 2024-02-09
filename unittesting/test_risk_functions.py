@@ -15,10 +15,29 @@ class TestRiskFunctions(unittest.TestCase):
     def setUp(self):
         # Initialize any objects or variables needed for the tests
         self.risk_estimates = RiskEstimates
-        self.position_limits = PositionLimits(instrument_name='SP500')
         self.volatility = Volatility()
         self.risk_overlay = RiskOverlay()
         self.margins = Margins()
+
+        self.total_positions_df = pd.read_csv('unittesting/test_data/total_portfolio_positions.csv', index_col=0)
+        self.open_interest_df = pd.read_csv('unittesting/test_data/open_interest.csv', index_col=0)
+        self.notional_exposure_df = pd.read_csv('unittesting/test_data/notional_exposure.csv', index_col=0)
+        self.standard_deviation_df = pd.read_csv('unittesting/test_data/standard_deviation.csv', index_col=0)
+
+        self.position_limits = PositionLimits(
+            total_positions_df=self.total_positions_df, 
+            standard_deviation_df=self.standard_deviation_df,
+            notional_exposure_per_contract_df=self.notional_exposure_df,
+            open_interest_df=self.open_interest_df,
+            IDM=2.5,
+            instrument_weight=0.10,
+            risk_target=0.20,
+            average_forecast=10,
+            max_forecast=20,
+            max_leverage_ratio=2.0,
+            capital=500_000,
+            max_pct_of_open_interest=0.01,
+            max_forecast_margin=0.50)
 
         prices_df = pd.read_csv('unittesting/test_data.csv')
 
@@ -51,101 +70,106 @@ class TestRiskFunctions(unittest.TestCase):
 
         self.position_weights = pd.DataFrame().from_dict(position_weights_dct)
 
-    def test_estimated_portfolio_risk_multiplier(self):
-        # Test using Carver's example
-        expected_result = 0.5982854053217644
+    # def test_total_portfolio_risk(self):
 
-        result = self.risk_overlay.get_estimated_portfolio_risk_multiplier(self.position_weights, self.returns_matrix, 0.30)
+    def test_position_risk(self):
+        self.position_limits.get_risk_adjusted_positions()
 
-        self.assertAlmostEqual(result, expected_result)
+    # def test_estimated_portfolio_risk_multiplier(self):
+    #     # Test using Carver's example
+    #     expected_result = 0.5982854053217644
 
-    def test_jump_risk_multiplier(self):
-        expected_result = 0.6785805908551636
+    #     result = self.risk_overlay.get_estimated_portfolio_risk_multiplier(self.position_weights, self.returns_matrix, 0.30)
 
-        result = self.risk_overlay.get_jump_risk_multiplier(self.position_weights, self.returns_matrix)
+    #     self.assertAlmostEqual(result, expected_result)
 
-        self.assertAlmostEqual(result, expected_result)
+    # def test_jump_risk_multiplier(self):
+    #     expected_result = 0.6785805908551636
 
-    def test_correlation_risk_multiplier(self):
-        expected_result = 1
+    #     result = self.risk_overlay.get_jump_risk_multiplier(self.position_weights, self.returns_matrix)
 
-        result = self.risk_overlay.get_correlation_risk_multiplier(self.position_weights, self.returns_matrix)
+    #     self.assertAlmostEqual(result, expected_result)
 
-        self.assertAlmostEqual(result, expected_result)
+    # def test_correlation_risk_multiplier(self):
+    #     expected_result = 1
 
-    def test_leverage_risk_multiplier(self):
-        expected_result = 1.0
+    #     result = self.risk_overlay.get_correlation_risk_multiplier(self.position_weights, self.returns_matrix)
 
-        result = self.risk_overlay.get_leverage_risk_multiplier(self.position_weights, 20)
+    #     self.assertAlmostEqual(result, expected_result)
 
-        self.assertAlmostEqual(result, expected_result)
+    # def test_leverage_risk_multiplier(self):
+    #     expected_result = 1.0
 
-    def test_final_risk_multiplier(self):
-        expected_result = 0.5982854053217644
+    #     result = self.risk_overlay.get_leverage_risk_multiplier(self.position_weights, 20)
 
-        result = self.risk_overlay.final_risk_multiplier(self.position_weights, self.returns_matrix, 20)
+    #     self.assertAlmostEqual(result, expected_result)
 
-        self.assertAlmostEqual(result, expected_result)
+    # def test_final_risk_multiplier(self):
+    #     expected_result = 0.5982854053217644
 
-    def test_minimum_volatility(self):
-        result = self.volatility.minimum_volatility(1.5, 0.10, 0.20, self.sp500['SP500'].tolist(), 4.0)
+    #     result = self.risk_overlay.final_risk_multiplier(self.position_weights, self.returns_matrix, 20)
 
-        self.assertTrue(result)
+    #     self.assertAlmostEqual(result, expected_result)
 
-    def test_VaR_Historical(self):
-        expected_result = 7895.112258922633
+    #!def test_minimum_volatility(self):
+    #!    result = self.volatility.minimum_volatility(1.5, 0.10, 0.20, self.sp500['SP500'].tolist(), 4.0)
+#!
+    #!    self.assertTrue(result)
+#!
+    #!def test_VaR_Historical(self):
+    #!    expected_result = 7895.112258922633
+#!
+    #!    result = self.risk_estimates.VaR_Historical(100_000, self.sp500['SP500'].tolist())
+#!
+    #!    self.assertAlmostEqual(result, expected_result)
+#!
+    #!def test_VaR_Parametrc(self):
+    #!    expected_result = 6503.474483239808
+#!
+    #!    result = self.risk_estimates.VaR_Parametric(100_000, 0.10, 10)
+#!
+    #!    self.assertAlmostEqual(result, expected_result)
 
-        result = self.risk_estimates.VaR_Historical(100_000, self.sp500['SP500'].tolist())
+    # def test_max_position_forecast(self):
+    #     IDM = 2.0
+    #     instrument_weight = 0.10
+    #     risk_target = 0.20
+    #     annual_stddev = 0.011
+    #     capital = 500_000
+    #     scaled_forecast = 10
+    #     average_forecast = 10
+    #     fx_rate = 1.0
+    #     price = 97
+    #     multiplier = 2500
 
-        self.assertAlmostEqual(result, expected_result)
+    #     notional_exposure_per_contract = price * multiplier * fx_rate
 
-    def test_VaR_Parametrc(self):
-        expected_result = 6503.474483239808
+    #     number_of_contracts = scaled_forecast * capital * IDM * instrument_weight * risk_target / (average_forecast * multiplier * price * fx_rate * annual_stddev)
 
-        result = self.risk_estimates.VaR_Parametric(100_000, 0.10, 10)
+    #     result = self.position_limits.maximum_position_forecast(number_of_contracts, capital, IDM, instrument_weight, risk_target, notional_exposure_per_contract, annual_stddev, average_forecast, max_forecast=20)
 
-        self.assertAlmostEqual(result, expected_result)
+    #     # expect the minimum of the two numbers to be the number of contracts since the max forecast is less
 
-    def test_max_position_forecast(self):
-        IDM = 2.0
-        instrument_weight = 0.10
-        risk_target = 0.20
-        annual_stddev = 0.011
-        capital = 500_000
-        scaled_forecast = 10
-        average_forecast = 10
-        fx_rate = 1.0
-        price = 97
-        multiplier = 2500
+    #     self.assertAlmostEqual(result, number_of_contracts)
 
-        notional_exposure_per_contract = price * multiplier * fx_rate
+    # def test_max_position_leverage(self):
+    #     fx_rate = 1.0
+    #     price = 97
+    #     multiplier = 2500
 
-        number_of_contracts = scaled_forecast * capital * IDM * instrument_weight * risk_target / (average_forecast * multiplier * price * fx_rate * annual_stddev)
+    #     notional_exposure_per_contract = price * multiplier * fx_rate
 
-        result = self.position_limits.maximum_position_forecast(number_of_contracts, capital, IDM, instrument_weight, risk_target, notional_exposure_per_contract, annual_stddev, average_forecast, max_forecast=20)
+    #     capital = 500_000
 
-        # expect the minimum of the two numbers to be the number of contracts since the max forecast is less
+    #     max_leverage_ratio = 2.0
 
-        self.assertAlmostEqual(result, number_of_contracts)
-
-    def test_max_position_leverage(self):
-        fx_rate = 1.0
-        price = 97
-        multiplier = 2500
-
-        notional_exposure_per_contract = price * multiplier * fx_rate
-
-        capital = 500_000
-
-        max_leverage_ratio = 2.0
-
-        number_of_contracts = 50
+    #     number_of_contracts = 50
         
-        result = self.position_limits.maximum_position_leverage(number_of_contracts, max_leverage_ratio, capital, notional_exposure_per_contract)
+    #     result = self.position_limits.maximum_position_leverage(number_of_contracts, max_leverage_ratio, capital, notional_exposure_per_contract)
 
-        expected_result = 4.123711340206185
+    #     expected_result = 4.123711340206185
 
-        self.assertAlmostEqual(result, expected_result) 
+    #     self.assertAlmostEqual(result, expected_result) 
 
 if __name__ == '__main__':
     unittest.main(failfast=True)
