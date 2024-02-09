@@ -227,137 +227,15 @@ class Volatility():
 
 
 class RiskOverlay():
-    def get_estimated_portfolio_risk_multiplier(
+    def __init__(
             self,
+            total_positions_df : pd.DataFrame,
             position_weights : pd.DataFrame,
             position_percent_returns : pd.DataFrame,
-            max_portfolio_risk : float = 0.30) -> float:
-        """
-        Parameters:
-        -----
-            position_weights : DataFrame
-                columns are the weight for each instrument, use get_position_weight to get each weight
-            position_percent_returns : DataFrame
-                each column are % returns for each ticker
-            max_portfolio_risk : float
-                max risk for the portfolio (should technically be 99th percentile of annualized risk)
-        -----
-        
-        """
-        
-        portfolio_standard_deviation = StatisticalCalculations.portfolio_stddev(position_weights, position_percent_returns)
-
-        estimated_portfolio_risk_multiplier = min(1, max_portfolio_risk / portfolio_standard_deviation)
-
-        if (estimated_portfolio_risk_multiplier < 1):
-            logging.warning(f"The estimated portfolio risk multiplier is {estimated_portfolio_risk_multiplier}, which is less than 1.")
-        
-        return estimated_portfolio_risk_multiplier
-
-
-    def get_jump_risk_multiplier(
-            self,
-            position_weights : pd.DataFrame,
-            position_percent_returns : pd.DataFrame,
-            max_portfolio_risk : float = 0.70) -> float:
-
-        stddev_lst = []
-
-        tickers = position_percent_returns.columns.tolist()
-
-        for ticker in tickers:
-            rolling_stddevs = StatisticalCalculations.rolling_std(position_percent_returns[ticker])
-            stddev_lst.append(np.percentile(rolling_stddevs, 99))
-
-
-        stddev_array = np.array(stddev_lst)
-
-        corr_matrix = StatisticalCalculations.correlation_matrix(position_percent_returns, Periods.WEEKLY, 52)
-
-        covariance_matrix = np.dot(np.dot(np.diag(stddev_array), corr_matrix), np.diag(stddev_array))
-
-        weights_lst : list = []
-
-        # gets the weights for each instrument
-        for ticker in tickers:
-            weights_lst.append(position_weights.iloc[0, position_weights.columns.get_loc(ticker)])
-
-        weights = np.array(weights_lst)
-
-        weights_T = weights.transpose()
-
-        radicand : float = np.dot(np.dot(weights, covariance_matrix), weights_T)
-
-        jump_risk_multiplier = min(1, max_portfolio_risk / sqrt(radicand))
-
-        if (jump_risk_multiplier < 1):
-            logging.warning(f"The jump risk multiplier is {jump_risk_multiplier}, which is less than 1.")
-
-        return jump_risk_multiplier
-    
-
-    def get_correlation_risk_multiplier(
-            self,
-            position_weights : pd.DataFrame,
-            position_percent_returns : pd.DataFrame,
-            max_portfolio_risk : float = 0.65) -> float:
-
-        tickers = position_percent_returns.columns.tolist()
-
-        risk_lst = []
-
-        for ticker in tickers:
-            # get the most recent value
-            rolling_stddev = StatisticalCalculations.rolling_std(position_percent_returns[ticker])[-1]
-            risk_lst.append(rolling_stddev * position_weights.iloc[0, position_weights.columns.get_loc(ticker)])
-
-        risk_lst = np.array(risk_lst)
-
-        risk_lst = np.absolute(risk_lst)
-
-        standard_deviation = np.sum(risk_lst)
-
-        correlation_risk_multiplier = min(1, max_portfolio_risk / standard_deviation)
-
-        if (correlation_risk_multiplier < 1):
-            logging.warning(f"The correlation risk multiplier is {correlation_risk_multiplier}, which is less than 1.")
-
-        return correlation_risk_multiplier
-    
-
-    def get_leverage_risk_multiplier(
-            self,
-            position_weights : pd.DataFrame,
-            max_portfolio_leverage : float = 20) -> float:
-        
-        tickers = position_weights.columns.tolist()
-
-        weights_lst : list = []
-
-        # gets the weights for each instrument
-        for ticker in tickers:
-            weights_lst.append(position_weights.iloc[0, position_weights.columns.get_loc(ticker)])
-
-        weights = np.array(weights_lst)
-
-        absolute_weights = np.absolute(weights)
-
-        leverage = np.sum(absolute_weights)
-
-        leverage_risk_multiplier = min(1, max_portfolio_leverage / leverage)
-
-        if (leverage_risk_multiplier < 1):
-            logging.warning(f"The leverage risk multiplier is {leverage_risk_multiplier}, which is less than 1.")
-
-        return leverage_risk_multiplier
-
-
-    def final_risk_multiplier(
-            self,
-            position_weights : pd.DataFrame,
-            position_percent_returns : pd.DataFrame,
-            max_portfolio_leverage : int) -> float:
-        
+            max_standard_deviation_risk : float = 0.30,
+            max_jump_risk : float = 0.70,
+            max_correlation_risk : float = 0.65,
+            max_portfolio_leverage : int = 20) -> None:
         """
         Parameters:
         ---
@@ -365,11 +243,159 @@ class RiskOverlay():
                 each column should have the position weight for each ticker
                 NOTE this is different from instrument weights:
                 this weight is the notional exposure of the instrument divided by the total portfolio capital
+            position_percent_returns : DataFrame
+                each column are % returns for each ticker
+            max_standard_deviation_risk : float
+                max risk for the portfolio (should technically be 99th percentile of annualized risk)
         ---
-        
         """
+
+        self.total_positions_df : pd.DataFrame = total_positions_df.dropna()
+        self.dates : list = self.total_positions_df.index.tolist()
+        self.contract_names : list = self.total_positions_df.columns.tolist()
+
+        self.position_weights : pd.DataFrame = position_weights
+        self.position_percent_returns : pd.DataFrame = position_percent_returns
+
+        self.max_standard_deviation_risk : float = max_standard_deviation_risk
+        self.max_jump_risk : float = max_jump_risk
+        self.max_correlation_risk : float = max_correlation_risk
+        self.max_portfolio_leverage : int = max_portfolio_leverage
+
+        self.rolling_stddevs : pd.DataFrame = pd.DataFrame(index=self.position_percent_returns.index, columns=self.contract_names)
+        for contract in self.contract_names:
+            self.rolling_stddevs[contract] = StatisticalCalculations.rolling_std(self.position_percent_returns[contract])
+
+
+        self.correlation_matrices : list = []
+        for idx, date in enumerate(self.dates):
+            matrix_table = pd.read_csv(f"matrices/matrix{idx}.csv", header=None)
+            matrix_array = np.array(matrix_table)
+            self.correlation_matrices.append(matrix_array)
+
+        self.risk_adjusted_positions : pd.DataFrame = pd.DataFrame(index=self.total_positions_df.index, columns=self.contract_names)
+
+        self.set_risk_adjusted_positions()
+
+    def set_risk_adjusted_positions(self):
+        idx = 1
+        for date in self.dates:
+            std_risk = self.estimated_portfolio_risk_multiplier(idx)
+            jump_risk = self.jump_risk_multiplier(idx)
+            correlation_risk = self.correlation_risk_multiplier(idx)
+            leverage_risk = self.leverage_risk_multiplier(idx)
+
+            total_risk_multiplier = min(
+                std_risk,
+                jump_risk,
+                correlation_risk,
+                leverage_risk)
+
+            for contract in self.contract_names:
+                self.risk_adjusted_positions.at[date, contract] = self.total_positions_df.at[date, contract] * total_risk_multiplier
+
+            idx += 1
+            
+
+    def get_risk_adjusted_positions(self):
+        return self.risk_adjusted_positions
+
+    #! Needs Optimization
+    def estimated_portfolio_risk_multiplier(self, idx : int) -> float:
+        portfolio_standard_deviation = StatisticalCalculations.portfolio_stddev(
+            self.position_weights.iloc[:idx],
+            self.position_percent_returns.iloc[:idx],
+            self.rolling_stddevs.iloc[:idx],
+            self.correlation_matrices[idx-1])
+
+        standard_deviation_risk_multiplier = min(1, self.max_standard_deviation_risk / portfolio_standard_deviation)
+
+        if (standard_deviation_risk_multiplier < 1):
+            logging.warning(f"The estimated portfolio risk multiplier is {standard_deviation_risk_multiplier}, which is less than 1.")
         
-        return min(self.get_estimated_portfolio_risk_multiplier(position_weights, position_percent_returns), self.get_jump_risk_multiplier(position_weights, position_percent_returns), self.get_correlation_risk_multiplier(position_weights, position_percent_returns), self.get_leverage_risk_multiplier(position_weights, max_portfolio_leverage))
+        return standard_deviation_risk_multiplier
+
+
+    #! Needs Optimization
+    def jump_risk_multiplier(self, idx : int) -> float:
+        stddev_lst = []
+
+        for contract in self.contract_names:
+            rolling_stddevs = self.rolling_stddevs.iloc[:idx][contract]
+            stddev_lst.append(np.percentile(rolling_stddevs, 99))
+
+        stddev_array = np.array(stddev_lst)
+
+        corr_matrix = self.correlation_matrices[idx-1]
+
+        covariance_matrix = np.dot(np.dot(np.diag(stddev_array), corr_matrix), np.diag(stddev_array))
+
+        weights_lst : list = []
+
+        # gets the weights for each instrument
+        for contract in self.contract_names:
+            contract_column_idx =  self.position_weights.columns.get_loc(contract)
+            weights_lst.append(self.position_weights.iloc[idx, contract_column_idx])
+
+        weights = np.array(weights_lst)
+
+        weights_T = weights.transpose()
+
+        radicand : float = np.dot(np.dot(weights, covariance_matrix), weights_T)
+
+        jump_risk_multiplier = min(1, self.max_jump_risk / sqrt(radicand))
+
+        if (jump_risk_multiplier < 1):
+            logging.warning(f"The jump risk multiplier is {jump_risk_multiplier}, which is less than 1.")
+
+        return jump_risk_multiplier
+    
+
+    def correlation_risk_multiplier(self, idx : int) -> float:
+        risk_lst = []
+
+        for contract in self.contract_names:
+            # get the most recent value
+            rolling_stddev = self.rolling_stddevs.iloc[:idx][contract]
+
+            contract_column_idx = self.position_weights.columns.get_loc(contract)
+
+            risk_lst.append(rolling_stddev * self.position_weights.iloc[idx, contract_column_idx])
+
+        risk_lst = np.array(risk_lst)
+
+        risk_lst = np.absolute(risk_lst)
+
+        standard_deviation = np.sum(risk_lst)
+
+        correlation_risk_multiplier = min(1, self.max_correlation_risk / standard_deviation)
+
+        if (correlation_risk_multiplier < 1):
+            logging.warning(f"The correlation risk multiplier is {correlation_risk_multiplier}, which is less than 1.")
+
+        return correlation_risk_multiplier
+    
+
+    def leverage_risk_multiplier(self, idx : int) -> float:
+        weights_lst : list = []
+
+        # gets the weights for each instrument
+        for contract in self.contract_names:
+            contract_column_idx = self.position_weights.columns.get_loc(contract)
+            weights_lst.append(self.position_weights.iloc[idx, contract_column_idx])
+
+        weights = np.array(weights_lst)
+
+        absolute_weights = np.absolute(weights)
+
+        leverage = np.sum(absolute_weights)
+
+        leverage_risk_multiplier = min(1, self.max_portfolio_leverage / leverage)
+
+        if (leverage_risk_multiplier < 1):
+            logging.warning(f"The leverage risk multiplier is {leverage_risk_multiplier}, which is less than 1.")
+
+        return leverage_risk_multiplier
 
 
 class MarginLevels(float, Enum):
