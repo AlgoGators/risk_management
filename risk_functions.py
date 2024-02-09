@@ -24,43 +24,77 @@ def leverage_ratio(portfolio):
 
 
 class PositionLimits():
-    def __init__(self, instrument_name : str):
-        self.instrument_name : str = instrument_name
-
-    def maximum_position(
-            self,
-            number_of_contracts,
-            IDM, 
-            instrument_weight, 
-            risk_target, 
-            annualized_stddev,
-            average_forecast,
-            max_forecast,
-            max_leverage_ratio,
-            capital,
-            notional_exposure_per_contract,
-            open_interest,
-            max_pct_of_open_interest,
-            max_forecast_margin=0.5) -> float:
-        """Returns the lesser of the max position based on forecast, leverage, and open interest"""
-
-        return min(
-            self.maximum_position_forecast(number_of_contracts, capital, IDM, instrument_weight, risk_target, notional_exposure_per_contract, annualized_stddev, average_forecast, max_forecast, max_forecast_margin=max_forecast_margin), 
-            self.maximum_position_leverage(number_of_contracts, max_leverage_ratio, capital, notional_exposure_per_contract), 
-            self.maximum_position_open_interest(number_of_contracts, open_interest, max_pct_of_open_interest))
-
-    def maximum_position_forecast(
-            self,
-            number_of_contracts : float,
-            capital : float,
+    def __init__(
+            self, 
+            total_positions_df : pd.DataFrame,
+            standard_deviation_df : pd.DataFrame,
+            notional_exposure_per_contract_df : pd.DataFrame,
+            open_interest_df : pd.DataFrame,
             IDM : float,
             instrument_weight : float,
             risk_target : float,
-            notional_exposure_per_contract : float,
-            stddev : float,
             average_forecast : int,
             max_forecast : int,
-            max_forecast_margin : float = 0.50) -> float:
+            max_leverage_ratio : float,
+            capital : float,
+            max_pct_of_open_interest : float,
+            max_forecast_margin : float = 0.50):
+
+        self.total_positions_df = total_positions_df.dropna()
+        self.dates = self.total_positions_df.index.tolist()
+        self.contract_names = self.total_positions_df.columns.tolist()
+
+        self.risk_adjusted_positions : pd.DataFrame = pd.DataFrame(index=self.total_positions_df.index, columns=self.contract_names)
+        
+        self.standard_deviation_df = standard_deviation_df
+        self.notional_exposure_per_contract_df = notional_exposure_per_contract_df
+        self.open_interest_df = open_interest_df
+
+        self.IDM = IDM
+        self.instrument_weight = instrument_weight
+        self.risk_target = risk_target
+        self.average_forecast = average_forecast
+        self.max_forecast = max_forecast
+        self.max_leverage_ratio = max_leverage_ratio
+        self.capital = capital
+        self.max_pct_of_open_interest = max_pct_of_open_interest
+        self.max_forecast_margin = max_forecast_margin
+
+        self.set_risk_adjusted_positions()
+    
+    def set_risk_adjusted_positions(self):
+        for date in self.dates:
+            for contract in self.contract_names:
+                self.risk_adjusted_positions.at[date, contract] = self.maximum_position(
+                    contract,
+                    self.total_positions_df.at[date, contract],
+                    annualized_stddev=self.standard_deviation_df.at[date, contract],
+                    notional_exposure_per_contract=self.notional_exposure_per_contract_df.at[date, contract],
+                    open_interest=self.open_interest_df.at[date, contract])
+
+    def get_risk_adjusted_positions(self):
+        return self.risk_adjusted_positions
+
+    def maximum_position(
+            self,
+            instrument_name,
+            number_of_contracts,
+            annualized_stddev,
+            notional_exposure_per_contract,
+            open_interest,) -> float:
+        """Returns the lesser of the max position based on forecast, leverage, and open interest"""
+
+        return min(
+            self.maximum_position_forecast(instrument_name, number_of_contracts, notional_exposure_per_contract, annualized_stddev), 
+            self.maximum_position_leverage(instrument_name, number_of_contracts, notional_exposure_per_contract), 
+            self.maximum_position_open_interest(instrument_name, number_of_contracts, open_interest))
+
+    def maximum_position_forecast(
+            self,
+            instrument_name : str,
+            number_of_contracts : float,
+            notional_exposure_per_contract : float,
+            stddev : float) -> float:
         """
         Determines maximum position based on maximum forecast
         
@@ -84,24 +118,23 @@ class PositionLimits():
         #@ max_position_forecast   =   --------------------------------------------------------
         #@                             average_forecast * notional_exposure_per_contract * stddev
 
-        max_forecast_ratio = max_forecast / average_forecast
+        max_forecast_ratio = self.max_forecast / self.average_forecast
 
-        max_position_forecast = max_forecast_ratio * (capital * IDM * instrument_weight * risk_target) / (notional_exposure_per_contract * stddev)
+        max_position_forecast = max_forecast_ratio * (self.capital * self.IDM * self.instrument_weight * self.risk_target) / (notional_exposure_per_contract * stddev)
 
-        position_at_max_forecast = max_position_forecast * (1 + max_forecast_margin)
+        position_at_max_forecast = max_position_forecast * (1 + self.max_forecast_margin)
 
         max_position_of_forecast = min(position_at_max_forecast, number_of_contracts)
 
         if (max_position_of_forecast < number_of_contracts):
-            logging.warning(f"Instrument: {self.instrument_name} - The maximum position at max forecast, {max_position_of_forecast}, is less than the current position, {number_of_contracts}.")
+            logging.warning(f"Instrument: {instrument_name} - The maximum position at max forecast, {max_position_of_forecast}, is less than the current position, {number_of_contracts}.")
 
         return max_position_of_forecast
 
     def maximum_position_leverage(
             self,
+            instrument_name : str,
             number_of_contracts : float,
-            max_leverage_ratio : float,
-            capital : float,
             notional_exposure_per_contract : float) -> float:
         """
         Determines maximum position relative to maximum leverage
@@ -119,20 +152,20 @@ class PositionLimits():
         ---
         """
 
-        position_at_max_leverage = max_leverage_ratio * capital / notional_exposure_per_contract
+        position_at_max_leverage = self.max_leverage_ratio * self.capital / notional_exposure_per_contract
     
         max_position_of_leverage = min(position_at_max_leverage, number_of_contracts)
 
         if (max_position_of_leverage < number_of_contracts):
-            logging.warning(f"Instrument: {self.instrument_name} - The maximum position at max leverage, {max_position_of_leverage}, is less than the current position, {number_of_contracts}.")
+            logging.warning(f"Instrument: {instrument_name} - The maximum position at max leverage, {max_position_of_leverage}, is less than the current position, {number_of_contracts}.")
 
         return max_position_of_leverage
 
     def maximum_position_open_interest(
             self,
+            instrument_name : str,
             number_of_contracts : float,
-            open_interest : int,
-            max_pct_of_open_interest : float = 0.01) -> float:
+            open_interest : int) -> float:
         """
         Determines maximum acceptable position in order to not exceed a certain % of open interest
         
@@ -148,10 +181,10 @@ class PositionLimits():
 
         """
 
-        max_position_of_interest = min(open_interest * max_pct_of_open_interest, number_of_contracts)
+        max_position_of_interest = min(open_interest * self.max_pct_of_open_interest, number_of_contracts)
 
         if (max_position_of_interest < number_of_contracts):
-            logging.warning(f"Instrument: {self.instrument_name} - The maximum position at max open interest, {max_position_of_interest}, is less than the current position, {number_of_contracts}.")
+            logging.warning(f"Instrument: {instrument_name} - The maximum position at max open interest, {max_position_of_interest}, is less than the current position, {number_of_contracts}.")
 
         return max_position_of_interest
 
@@ -373,7 +406,3 @@ class Margins():
         scaleback : float = MarginLevels.ALERT / margin
 
         return self.scale_portfolio(portfolio, scaleback)
-
-
-if __name__ == "__main__":
-    pass
