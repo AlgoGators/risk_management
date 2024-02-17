@@ -424,9 +424,14 @@ def rolling_std(
     
     weighted_stddevs = []
 
-    for n, val in enumerate(returns.tolist()):
+    returns_lst = returns.tolist()
+
+    for n, val in enumerate(returns_lst):
         start = max(0, n - maximum_values)
-        annualized_stddev = exponentially_weighted_stddev(returns[start:n+1], span=32, annualize=True)
+        if len(returns_lst) < 32:
+            annualized_stddev = std(returns[start:n+1], annualize=True)
+        else:
+            annualized_stddev = exponentially_weighted_stddev(returns[start:n+1], span=32, annualize=True)
 
         annualized_stddevs.append(annualized_stddev)
 
@@ -446,7 +451,9 @@ def rolling_std(
 
 
 def portfolio_covar( 
-        position_percent_returns : pd.DataFrame) -> np.array:
+        position_percent_returns : pd.DataFrame,
+        latest_rolling_stddev_df : pd.DataFrame,
+        corr_matrix : np.array) -> np.array:
     """Calculates a covariance matrix as outlined by Carver on pages 606-607"""
 
     #@ Σ = σ.ρ.σᵀ = σσᵀ ⊙ ρ (using Hadamard product) = Diag(σ) * ρ * Diag(σ)
@@ -456,19 +463,9 @@ def portfolio_covar(
     #@ use 32 day span for standard deviations
     #@ window for equally weighted correlation matrix of 52 weeks
 
+    most_recent_stddev : pd.DataFrame = latest_rolling_stddev_df.iloc[-1]
 
-    stddev_lst = []
-
-    tickers = position_percent_returns.columns.tolist()
-
-    for ticker in tickers:
-        # get the most recent value
-        rolling_stddev = rolling_std(position_percent_returns[ticker])[-1]
-        stddev_lst.append(rolling_stddev)
-
-    stddev_array = np.array(stddev_lst)
-
-    corr_matrix = correlation_matrix(position_percent_returns, Periods.WEEKLY, 52)
+    stddev_array = np.array(most_recent_stddev.values.flatten())
 
     EW_covar = np.dot(np.dot(np.diag(stddev_array), corr_matrix), np.diag(stddev_array))
 
@@ -477,7 +474,17 @@ def portfolio_covar(
 
 def portfolio_stddev(
         position_weights : pd.DataFrame,
-        position_percent_returns : pd.DataFrame) -> float:
+        position_percent_returns : pd.DataFrame,
+        latest_rolling_stddev_df : pd.DataFrame,
+        corr_matrix : np.array) -> float:
+    
+    """
+    Parameter:
+    ---
+        rolling_stddevs_df : pd.DataFrame
+            Most recent rolling standard deviations for each instrument
+    ---
+    """
     
     #@                _______
     #@ Portfolio σ = √ w Σ wᵀ
@@ -495,7 +502,7 @@ def portfolio_stddev(
 
     weights_T = weights.transpose()
 
-    covariance_matrix = portfolio_covar(position_percent_returns)
+    covariance_matrix = portfolio_covar(position_percent_returns, latest_rolling_stddev_df, corr_matrix)
 
     radicand : float = np.dot(np.dot(weights, covariance_matrix), weights_T)
 
