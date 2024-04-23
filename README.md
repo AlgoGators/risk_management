@@ -8,6 +8,7 @@ Risk Management is tasked with three objectives:
 3. Automatically alert of changing market conditions that need action (under risk_reporting)
 
 ### Goals:
+- [ ] Effectively record whenever a risk limit is activated
 - [ ] Asymmetric measures of risk for equities
 - [ ] Build out automated reporting
 - [ ] Develop different VaR models like MVaR, IVaR as well as proper limits
