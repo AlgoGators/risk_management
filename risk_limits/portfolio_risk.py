@@ -73,7 +73,7 @@ def jump_risk_multiplier(maximum_portfolio_jump_risk : float, positions_weighted
     return scalar
 
 def portfolio_risk_aggregator(
-        positions : np.ndarray, 
+        positions : np.ndarray,
         positions_weighted : np.ndarray, 
         covariance_matrix : np.ndarray, 
         jump_covariance_matrix : np.ndarray,
@@ -89,4 +89,4 @@ def portfolio_risk_aggregator(
     volatility_multiplier = portfolio_risk_multiplier(maximum_portfolio_risk, positions_weighted, covariance_matrix)
     jump_multiplier = jump_risk_multiplier(maximum_jump_risk, positions_weighted, jump_covariance_matrix)
 
-    return positions * np.minimum(leverage_multiplier, correlation_multiplier, volatility_multiplier, jump_multiplier)
+    return positions * min(leverage_multiplier, correlation_multiplier, volatility_multiplier, jump_multiplier)
