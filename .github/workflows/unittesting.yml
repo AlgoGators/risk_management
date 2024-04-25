@@ -26,5 +26,8 @@ jobs:
             - name: Install Dependencies
               run: python -m pip install -r .github/workflows/requirements.txt
 
-            - name: Unittesting
+            - name: Dyn_Opt Unittesting
               run: python dyn_opt/unittesting/test_dyn_opt.py
+            
+            - name: Risk_Metrics Unittesting
+              run: python risk_metrics/unittesting/test_risk_metrics.py
