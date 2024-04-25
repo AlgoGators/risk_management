@@ -149,3 +149,34 @@ def calculate_GARCH_variances(returns : pd.DataFrame, warmup : int, weights : tu
     GARCH_variances = GARCH_variances.interpolate() if fill else GARCH_variances
 
     return GARCH_variances[warmup:]
+
+def calculate_GARCH_covariances(product_returns : pd.DataFrame, warmup : int, weights : tuple[float, float, float], fill=False) -> pd.DataFrame:
+    if sum(weights) != 1:
+        raise ValueError('The sum of the weights must be equal to 1')
+    
+    GARCH_covariances : pd.DataFrame = pd.DataFrame()
+
+    for i, pair in enumerate(product_returns.columns.tolist()):
+        pair_returns = product_returns[pair]
+        pair_returns.dropna(inplace=True)
+
+        dates = pair_returns.index
+
+        # Calculate rolling LT variance
+        LT_covariances = pair_returns.rolling(window=warmup).mean().fillna(method='bfill')
+
+        df = pd.Series(index=dates)
+        df[0] = pair_returns[0]
+
+        for i, _ in enumerate(dates[1:], 1):
+            df[i] = pair_returns[i] * weights[0] + df[i-1] * weights[1] + LT_covariances[i] * weights[2]
+
+        if i == 0:
+            GARCH_covariances = df.to_frame(pair)
+            continue
+
+        GARCH_covariances = pd.merge(GARCH_covariances, df.to_frame(pair), how='outer', left_index=True, right_index=True)
+
+    GARCH_covariances = GARCH_covariances.interpolate() if fill else GARCH_covariances
+
+    return GARCH_covariances[warmup:]

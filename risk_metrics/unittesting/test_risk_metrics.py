@@ -45,7 +45,12 @@ class TestRiskMetrics(unittest.TestCase):
         
         pd.testing.assert_frame_equal(df, pd.read_parquet('risk_metrics/unittesting/data/GARCH_variances.parquet'))
 
-    
+    def test_calculate_GARCH_covariances(self):
+        product_returns = pd.read_parquet('risk_metrics/unittesting/data/product_returns.parquet')
+
+        df = risk_metrics.calculate_GARCH_covariances(product_returns, 100, (0.01, 0.01, 0.98), fill=True)
+
+        pd.testing.assert_frame_equal(df, pd.read_parquet('risk_metrics/unittesting/data/GARCH_covariances.parquet'))
 
 if __name__ == '__main__':
     unittest.main(failfast=True)
