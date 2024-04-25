@@ -18,6 +18,7 @@ Risk Management is tasked with three objectives:
 - [ ] Develop different VaR models like MVaR, IVaR as well as proper limits
 - [ ] Use different distributions that may be more accurate for predictions
 - [ ] Improve GARCH
+- [ ] Look into using Integrated GARCH model for VaR estimate (used by JPM and includes a unit root—volatility doesn't mean revert).
 
 ## Dynamic Optimization
 
