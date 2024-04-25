@@ -52,5 +52,20 @@ class TestRiskMetrics(unittest.TestCase):
 
         pd.testing.assert_frame_equal(df, pd.read_parquet('risk_metrics/unittesting/data/GARCH_covariances.parquet'))
 
+    def test_calculate_value_at_risk_historical(self):
+        daily_returns = pd.read_parquet('risk_metrics/unittesting/data/daily_returns.parquet')
+
+        df = risk_metrics.calculate_value_at_risk_historical(daily_returns, 0.95, 100)
+
+        pd.testing.assert_frame_equal(df, pd.read_parquet('risk_metrics/unittesting/data/value_at_risk_historical.parquet'))
+
+    def test_calculate_value_at_risk_parametric(self):
+        GARCH_variances = pd.read_parquet('risk_metrics/unittesting/data/GARCH_variances.parquet')
+
+        df = risk_metrics.calculate_value_at_risk_parametric(GARCH_variances, 0.95)
+        print(df)
+
+        pd.testing.assert_frame_equal(df, pd.read_parquet('risk_metrics/unittesting/data/value_at_risk_parametric.parquet'))
+
 if __name__ == '__main__':
     unittest.main(failfast=True)

@@ -1,5 +1,6 @@
 import pandas as pd
 import numpy as np
+from scipy.stats import norm
 
 def ffill_zero(df: pd.DataFrame) -> pd.DataFrame:
     """
@@ -180,3 +181,11 @@ def calculate_GARCH_covariances(product_returns : pd.DataFrame, warmup : int, we
     GARCH_covariances = GARCH_covariances.interpolate() if fill else GARCH_covariances
 
     return GARCH_covariances[warmup:]
+
+def calculate_value_at_risk_historical(returns : pd.DataFrame, confidence_level : float, lookback : int) -> pd.DataFrame:
+    # Calculate the historical value at risk
+    return -returns.rolling(window=lookback).quantile(1 - confidence_level)
+
+def calculate_value_at_risk_parametric(variances : pd.DataFrame, confidence_level : float) -> pd.DataFrame:
+    # Calculate the parametric value at risk
+    return -variances.apply(lambda x: x ** 0.5 * norm.ppf(1 - confidence_level))
