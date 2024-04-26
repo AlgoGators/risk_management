@@ -115,8 +115,8 @@ def position_limit_aggregator(
             max_forecast_position_limit(maximum_forecast_ratio, capital, IDM, tau, max_forecast_buffer, instrument_weight, notional_exposure_per_contract, annualized_volatility),
             max_pct_of_open_interest_position_limit(max_acceptable_pct_of_open_interest, open_interest), contracts)
     
-    return np.minimum(
+    return np.minimum(np.minimum(
         max_leverage_position_limit(maximum_position_leverage, capital, notional_exposure_per_contract),
         max_forecast_position_limit(maximum_forecast_ratio, capital, IDM, tau, max_forecast_buffer, instrument_weight, notional_exposure_per_contract, annualized_volatility),
-        max_pct_of_open_interest_position_limit(max_acceptable_pct_of_open_interest, open_interest), contracts)
+        max_pct_of_open_interest_position_limit(max_acceptable_pct_of_open_interest, open_interest)), contracts)
 
