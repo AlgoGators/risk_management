@@ -26,7 +26,7 @@ def max_forecast_position_limit(
         max_forecast_buffer : float,
         instrument_weight : float | np.ndarray,
         notional_exposure_per_contract : float | np.ndarray, 
-        STD : float | np.ndarray,
+        annualized_volatility : float | np.ndarray,
         contracts : float | np.ndarray) -> float | np.ndarray:
     
     """
@@ -48,12 +48,12 @@ def max_forecast_position_limit(
             ... often 1/N
         notional_exposure_per_contract : float | np.ndarray
             the notional exposure per contract for the instrument
-        STD : float | np.ndarray
+        annualized_volatility : float | np.ndarray
             standard deviation of returns for the instrument, in same terms as tau e.g. annualized
         contracts : float | np.ndarray
             the number of contracts to be traded
     """
-    return np.minimum((1 + max_forecast_buffer) * maximum_forecast_ratio * capital * IDM * instrument_weight * tau / notional_exposure_per_contract / STD, contracts)
+    return np.minimum((1 + max_forecast_buffer) * maximum_forecast_ratio * capital * IDM * instrument_weight * tau / notional_exposure_per_contract / annualized_volatility, contracts)
 
 def max_pct_of_open_interest_position_limit(max_acceptable_pct_of_open_interest : float, open_interest : float | np.ndarray, contracts : float | np.ndarray) -> float | np.ndarray:
     """
@@ -81,7 +81,7 @@ def position_limit_aggregator(
     max_forecast_buffer : float,
     contracts : float | np.ndarray,
     notional_exposure_per_contract : float | np.ndarray,
-    STD : float | np.ndarray,
+    annualized_volatility : float | np.ndarray,
     instrument_weight : float | np.ndarray,
     open_interest : float | np.ndarray) -> float | np.ndarray:
     """
@@ -108,7 +108,7 @@ def position_limit_aggregator(
             the number of contracts to be traded
         notional_exposure_per_contract : float | np.ndarray
             the notional exposure per contract for the instrument
-        STD : float | np.ndarray
+        annualized_volatility : float | np.ndarray
             standard deviation of returns for the instrument, in same terms as tau e.g. annualized
         instrument_weight : float | np.ndarray
             the weight of the instrument in the portfolio (capital allocated to the instrument / total capital)
@@ -118,6 +118,6 @@ def position_limit_aggregator(
     """
     return np.minimum(
         max_leverage_position_limit(maximum_position_leverage, capital, notional_exposure_per_contract, contracts),
-        max_forecast_position_limit(maximum_forecast_ratio, capital, IDM, tau, max_forecast_buffer, instrument_weight, notional_exposure_per_contract, STD, contracts),
+        max_forecast_position_limit(maximum_forecast_ratio, capital, IDM, tau, max_forecast_buffer, instrument_weight, notional_exposure_per_contract, annualized_volatility, contracts),
         max_pct_of_open_interest_position_limit(max_acceptable_pct_of_open_interest, open_interest, contracts))
 
