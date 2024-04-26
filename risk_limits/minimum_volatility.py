@@ -1,6 +1,6 @@
 import numpy as np
 
-def minimum_volatility(max_forecast_ratio : float, IDM : float, tau : float, maximum_leverage : float, instrument_weight : float | np.ndarray, STD : float | np.ndarray) -> float | np.ndarray:
+def minimum_volatility(max_forecast_ratio : float, IDM : float, tau : float, maximum_leverage : float, instrument_weight : float | np.ndarray, STD : float | np.ndarray) -> bool:
     """
     Returns True if the returns for a given instrument meets a minimum level of volatility; else, False
     (works for both single instruments and arrays)
