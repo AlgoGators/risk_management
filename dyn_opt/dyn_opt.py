@@ -3,6 +3,8 @@ import numpy as np
 from functools import reduce
 from risk_limits import portfolio_risk, position_risk
 
+from risk_metrics.risk_functions import daily_variance_to_annualized_volatility
+
 def get_notional_exposure_per_contract(unadj_prices : pd.DataFrame, multipliers : pd.DataFrame) -> pd.DataFrame:
     notional_exposure_per_contract = unadj_prices.apply(lambda col: col * multipliers.loc['Multiplier', col.name])
     return notional_exposure_per_contract.abs()
@@ -182,12 +184,12 @@ def iterator(
 
         optimized_positions_one_day = buffered_weights / weight_per_contract_one_day
 
-        STD = np.sqrt(np.diag(covariance_matrix_one_day))
+        annualized_volatilities = daily_variance_to_annualized_volatility(np.diag(covariance_matrix_one_day))
 
         risk_limited_positions = position_risk.position_limit_aggregator(
             maximum_position_leverage, capital, IDM, tau, maximum_forecast_ratio, 
             max_acceptable_pct_of_open_interest, max_forecast_buffer, optimized_positions_one_day, 
-            notional_exposure_per_contract_one_day, STD, instrument_weight_one_day, open_interest_one_day)
+            notional_exposure_per_contract_one_day, annualized_volatilities, instrument_weight_one_day, open_interest_one_day)
 
         risk_limited_positions_weighted = risk_limited_positions * weight_per_contract_one_day
 
