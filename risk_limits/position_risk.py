@@ -116,6 +116,12 @@ def position_limit_aggregator(
         open_interest : float | np.ndarray
             the open interest for the instrument
     """
+    if isinstance(contracts, (int, float)):
+        return min(
+            max_leverage_position_limit(maximum_position_leverage, capital, notional_exposure_per_contract, contracts),
+            max_forecast_position_limit(maximum_forecast_ratio, capital, IDM, tau, max_forecast_buffer, instrument_weight, notional_exposure_per_contract, annualized_volatility, contracts),
+            max_pct_of_open_interest_position_limit(max_acceptable_pct_of_open_interest, open_interest, contracts))
+    
     return np.minimum(
         max_leverage_position_limit(maximum_position_leverage, capital, notional_exposure_per_contract, contracts),
         max_forecast_position_limit(maximum_forecast_ratio, capital, IDM, tau, max_forecast_buffer, instrument_weight, notional_exposure_per_contract, annualized_volatility, contracts),
