@@ -5,7 +5,6 @@ sys.path.append('../risk_management')
 
 import unittest
 import pandas as pd
-import os
 
 from dyn_opt import dyn_opt
 

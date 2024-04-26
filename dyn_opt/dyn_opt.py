@@ -12,23 +12,23 @@ def get_notional_exposure_per_contract(unadj_prices : pd.DataFrame, multipliers 
 def get_weight_per_contract(notional_exposure_per_contract : pd.DataFrame, capital : float) -> pd.DataFrame:
     return notional_exposure_per_contract / capital
 
-def get_cost_penalty(x : np.ndarray, y : np.ndarray, weighted_cost_per_contract : np.ndarray, cost_penalty_scalar : int) -> float:
+def get_cost_penalty(x_weighted : np.ndarray, y_weighted : np.ndarray, weighted_cost_per_contract : np.ndarray, cost_penalty_scalar : int) -> float:
     """Finds the trading cost to go from x to y, given the weighted cost per contract and the cost penalty scalar"""
 
     #* Should never activate but just in case
-    x = np.nan_to_num(np.asarray(x, dtype=np.float64))
-    y = np.nan_to_num(np.asarray(y, dtype=np.float64))
+    x_weighted = np.nan_to_num(np.asarray(x_weighted, dtype=np.float64))
+    y_weighted = np.nan_to_num(np.asarray(y_weighted, dtype=np.float64))
     weighted_cost_per_contract = np.nan_to_num(np.asarray(weighted_cost_per_contract, dtype=np.float64))
 
-    trading_cost = np.abs(x - y) * weighted_cost_per_contract
+    trading_cost = np.abs(x_weighted - y_weighted) * weighted_cost_per_contract
 
     return np.sum(trading_cost) * cost_penalty_scalar
 
-def get_portfolio_tracking_error_standard_deviation(x : np.ndarray, y : np.ndarray, covariance_matrix : np.ndarray, cost_penalty : float = 0.0) -> float:
-    if np.isnan(x).any() or np.isnan(y).any() or np.isnan(covariance_matrix).any():
+def get_portfolio_tracking_error_standard_deviation(x_weighted : np.ndarray, y_weighted : np.ndarray, covariance_matrix : np.ndarray, cost_penalty : float = 0.0) -> float:
+    if np.isnan(x_weighted).any() or np.isnan(y_weighted).any() or np.isnan(covariance_matrix).any():
         raise ValueError("Input contains NaN values")
     
-    tracking_errors = x - y
+    tracking_errors = x_weighted - y_weighted
 
     radicand = tracking_errors @ covariance_matrix @ tracking_errors.T
 
