@@ -63,7 +63,6 @@ class TestRiskMetrics(unittest.TestCase):
         GARCH_variances = pd.read_parquet('risk_metrics/unittesting/data/GARCH_variances.parquet')
 
         df = risk_metrics.calculate_value_at_risk_parametric(GARCH_variances, 0.95)
-        print(df)
 
         pd.testing.assert_frame_equal(df, pd.read_parquet('risk_metrics/unittesting/data/value_at_risk_parametric.parquet'))
 
