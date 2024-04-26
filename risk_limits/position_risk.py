@@ -1,6 +1,6 @@
 import numpy as np
 
-def max_leverage_position_limit(maximum_leverage : float, capital : float, notional_exposure_per_contract : float | np.ndarray, contracts : float | np.ndarray) -> float | np.ndarray:
+def max_leverage_position_limit(maximum_leverage : float, capital : float, notional_exposure_per_contract : float | np.ndarray) -> float | np.ndarray:
     """
     Returns the lesser of the max leverage limit and the number of contracts to be traded
     (works for both single instruments and arrays)
@@ -13,10 +13,8 @@ def max_leverage_position_limit(maximum_leverage : float, capital : float, notio
             the total capital allocated to the portfolio
         notional_exposure_per_contract : float | np.ndarray
             the notional exposure per contract for the instrument
-        contracts : float | np.ndarray
-            the number of contracts to be traded
     """
-    return np.minimum(maximum_leverage * capital / notional_exposure_per_contract, contracts)
+    return maximum_leverage * capital / notional_exposure_per_contract
 
 def max_forecast_position_limit(
         maximum_forecast_ratio : float, 
@@ -26,8 +24,7 @@ def max_forecast_position_limit(
         max_forecast_buffer : float,
         instrument_weight : float | np.ndarray,
         notional_exposure_per_contract : float | np.ndarray, 
-        annualized_volatility : float | np.ndarray,
-        contracts : float | np.ndarray) -> float | np.ndarray:
+        annualized_volatility : float | np.ndarray) -> float | np.ndarray:
     
     """
     Returns the lesser of the max forecast limit and the number of contracts to be traded
@@ -50,12 +47,10 @@ def max_forecast_position_limit(
             the notional exposure per contract for the instrument
         annualized_volatility : float | np.ndarray
             standard deviation of returns for the instrument, in same terms as tau e.g. annualized
-        contracts : float | np.ndarray
-            the number of contracts to be traded
     """
-    return np.minimum((1 + max_forecast_buffer) * maximum_forecast_ratio * capital * IDM * instrument_weight * tau / notional_exposure_per_contract / annualized_volatility, contracts)
+    return (1 + max_forecast_buffer) * maximum_forecast_ratio * capital * IDM * instrument_weight * tau / notional_exposure_per_contract / annualized_volatility
 
-def max_pct_of_open_interest_position_limit(max_acceptable_pct_of_open_interest : float, open_interest : float | np.ndarray, contracts : float | np.ndarray) -> float | np.ndarray:
+def max_pct_of_open_interest_position_limit(max_acceptable_pct_of_open_interest : float, open_interest : float | np.ndarray) -> float | np.ndarray:
     """
     Returns the lesser of the max acceptable percentage of open interest and the number of contracts to be traded
     (works for both single instruments and arrays)
@@ -66,10 +61,8 @@ def max_pct_of_open_interest_position_limit(max_acceptable_pct_of_open_interest 
             the max acceptable percentage of open interest for a given instrument
         open_interest : float | np.ndarray
             the open interest for the instrument
-        contracts : float | np.ndarray
-            the number of contracts to be traded
     """
-    return np.minimum(max_acceptable_pct_of_open_interest * open_interest, contracts)
+    return max_acceptable_pct_of_open_interest * open_interest
 
 def position_limit_aggregator(
     maximum_position_leverage : float,
@@ -118,12 +111,12 @@ def position_limit_aggregator(
     """
     if isinstance(contracts, (int, float)):
         return min(
-            max_leverage_position_limit(maximum_position_leverage, capital, notional_exposure_per_contract, contracts),
-            max_forecast_position_limit(maximum_forecast_ratio, capital, IDM, tau, max_forecast_buffer, instrument_weight, notional_exposure_per_contract, annualized_volatility, contracts),
-            max_pct_of_open_interest_position_limit(max_acceptable_pct_of_open_interest, open_interest, contracts))
+            max_leverage_position_limit(maximum_position_leverage, capital, notional_exposure_per_contract),
+            max_forecast_position_limit(maximum_forecast_ratio, capital, IDM, tau, max_forecast_buffer, instrument_weight, notional_exposure_per_contract, annualized_volatility),
+            max_pct_of_open_interest_position_limit(max_acceptable_pct_of_open_interest, open_interest), contracts)
     
     return np.minimum(
-        max_leverage_position_limit(maximum_position_leverage, capital, notional_exposure_per_contract, contracts),
-        max_forecast_position_limit(maximum_forecast_ratio, capital, IDM, tau, max_forecast_buffer, instrument_weight, notional_exposure_per_contract, annualized_volatility, contracts),
-        max_pct_of_open_interest_position_limit(max_acceptable_pct_of_open_interest, open_interest, contracts))
+        max_leverage_position_limit(maximum_position_leverage, capital, notional_exposure_per_contract),
+        max_forecast_position_limit(maximum_forecast_ratio, capital, IDM, tau, max_forecast_buffer, instrument_weight, notional_exposure_per_contract, annualized_volatility),
+        max_pct_of_open_interest_position_limit(max_acceptable_pct_of_open_interest, open_interest), contracts)
 
