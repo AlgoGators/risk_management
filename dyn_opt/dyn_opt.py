@@ -198,7 +198,7 @@ def iterator(
             jump_covariance_matrix_one_day, maximum_portfolio_leverage, maximum_correlation_risk, 
             maximum_portfolio_risk, maximum_jump_risk)
 
-        optimized_positions.loc[date] = portfolio_risk_limited_positions
+        optimized_positions.loc[date] = round_multiple(portfolio_risk_limited_positions, 1)
 
     return optimized_positions
 
