@@ -1,6 +1,6 @@
 import numpy as np
 
-def minimum_volatility(max_forecast_ratio : float, IDM : float, tau : float, maximum_leverage : float, instrument_weight : float | np.ndarray, STD : float | np.ndarray) -> bool:
+def minimum_volatility(max_forecast_ratio : float, IDM : float, tau : float, maximum_leverage : float, instrument_weight : float | np.ndarray, annualized_volatility : float | np.ndarray) -> bool:
     """
     Returns True if the returns for a given instrument meets a minimum level of volatility; else, False
     (works for both single instruments and arrays)
@@ -18,7 +18,7 @@ def minimum_volatility(max_forecast_ratio : float, IDM : float, tau : float, max
         instrument_weight : float | np.ndarray
             the weight of the instrument in the portfolio (capital allocated to the instrument / total capital)
             ... often 1/N
-        STD : float | np.ndarray
+        annualized_volatility : float | np.ndarray
             standard deviation of returns for the instrument, in same terms as tau e.g. annualized
     """
-    return STD >= (max_forecast_ratio * IDM * instrument_weight * tau) / maximum_leverage
+    return annualized_volatility >= (max_forecast_ratio * IDM * instrument_weight * tau) / maximum_leverage
