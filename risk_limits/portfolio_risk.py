@@ -1,5 +1,7 @@
 import numpy as np
 
+from risk_metrics.risk_functions import daily_variance_to_annualized_volatility
+
 def max_leverage_portfolio_multiplier(maximum_portfolio_leverage : float, positions_weighted : np.ndarray) -> float:
     """
     Returns the positions scaled by the max leverage limit
@@ -17,7 +19,7 @@ def max_leverage_portfolio_multiplier(maximum_portfolio_leverage : float, positi
 
     return scalar
 
-def correlation_risk_portfolio_multiplier(maximum_portfolio_correlation_risk : float, positions_weighted : np.ndarray, STD : np.ndarray) -> float:
+def correlation_risk_portfolio_multiplier(maximum_portfolio_correlation_risk : float, positions_weighted : np.ndarray, annualized_volatility : np.ndarray) -> float:
     """
     Returns the positions scaled by the correlation risk limit
 
@@ -26,15 +28,18 @@ def correlation_risk_portfolio_multiplier(maximum_portfolio_correlation_risk : f
         positions_weighted : np.ndarray
             the notional exposure / position * # positions / capital
             Same as dynamic optimization
-        STD : np.ndarray
+        annualized_volatility : np.ndarray
             standard deviation of returns for the instrument, in same terms as tau e.g. annualized
     """
-    correlation_risk = np.sum(np.abs(positions_weighted) * STD)
+    correlation_risk = np.sum(np.abs(positions_weighted) * annualized_volatility)
     scalar = np.minimum(1, maximum_portfolio_correlation_risk / correlation_risk)
 
     return scalar
 
-def portfolio_risk_multiplier(maximum_portfolio_volatility : float, positions_weighted : np.ndarray, covariance_matrix : np.ndarray) -> float:
+def portfolio_risk_multiplier(
+        maximum_portfolio_volatility : float, 
+        positions_weighted : np.ndarray, 
+        covariance_matrix : np.ndarray) -> float:
     """
     Returns the positions scaled by the portfolio volatility limit
 
@@ -81,11 +86,11 @@ def portfolio_risk_aggregator(
         maximum_correlation_risk : float,
         maximum_portfolio_risk : float,
         maximum_jump_risk : float) -> np.ndarray:
-    
-    STD = np.sqrt(np.diag(covariance_matrix))
+
+    annualized_volatilities = daily_variance_to_annualized_volatility(np.diag(covariance_matrix))
 
     leverage_multiplier = max_leverage_portfolio_multiplier(maximum_portfolio_leverage, positions_weighted)
-    correlation_multiplier = correlation_risk_portfolio_multiplier(maximum_correlation_risk, positions_weighted, STD)
+    correlation_multiplier = correlation_risk_portfolio_multiplier(maximum_correlation_risk, positions_weighted, annualized_volatilities)
     volatility_multiplier = portfolio_risk_multiplier(maximum_portfolio_risk, positions_weighted, covariance_matrix)
     jump_multiplier = jump_risk_multiplier(maximum_jump_risk, positions_weighted, jump_covariance_matrix)
 
