@@ -5,6 +5,7 @@ from risk_limits import portfolio_risk, position_risk
 
 from risk_metrics.risk_functions import daily_variance_to_annualized_volatility
 
+
 def get_notional_exposure_per_contract(unadj_prices : pd.DataFrame, multipliers : pd.DataFrame) -> pd.DataFrame:
     notional_exposure_per_contract = unadj_prices.apply(lambda col: col * multipliers.loc['Multiplier', col.name])
     return notional_exposure_per_contract.abs()
@@ -16,9 +17,9 @@ def get_cost_penalty(x_weighted : np.ndarray, y_weighted : np.ndarray, weighted_
     """Finds the trading cost to go from x to y, given the weighted cost per contract and the cost penalty scalar"""
 
     #* Should never activate but just in case
-    x_weighted = np.nan_to_num(np.asarray(x_weighted, dtype=np.float64))
-    y_weighted = np.nan_to_num(np.asarray(y_weighted, dtype=np.float64))
-    weighted_cost_per_contract = np.nan_to_num(np.asarray(weighted_cost_per_contract, dtype=np.float64))
+    # x_weighted = np.nan_to_num(np.asarray(x_weighted, dtype=np.float64))
+    # y_weighted = np.nan_to_num(np.asarray(y_weighted, dtype=np.float64))
+    # weighted_cost_per_contract = np.nan_to_num(np.asarray(weighted_cost_per_contract, dtype=np.float64))
 
     trading_cost = np.abs(x_weighted - y_weighted) * weighted_cost_per_contract
 
@@ -30,14 +31,14 @@ def get_portfolio_tracking_error_standard_deviation(x_weighted : np.ndarray, y_w
     
     tracking_errors = x_weighted - y_weighted
 
-    radicand = tracking_errors @ covariance_matrix @ tracking_errors.T
+    dot_product = np.dot(np.dot(tracking_errors, covariance_matrix), tracking_errors)
 
     #* deal with negative radicand (really, REALLY shouldn't happen)
     #? maybe its a good weight set but for now, it's probably safer this way
-    if radicand < 0:
-        return 1.0 # Return 100% TE
+    if dot_product < 0:
+        return 1.0
     
-    return np.sqrt(radicand) + cost_penalty
+    return np.sqrt(dot_product) + cost_penalty
 
 def covariance_row_to_matrix(row : np.ndarray) -> np.ndarray:
     num_instruments = int(np.sqrt(2 * len(row)))
@@ -117,7 +118,7 @@ def greedy_algorithm(ideal : np.ndarray, x0 : np.ndarray, weighted_costs_per_con
 def clean_data(*args):
     dfs = [df.set_index(pd.to_datetime(df.index)).dropna() for df in args]
     intersection_index = reduce(lambda x, y: x.intersection(y), (df.index for df in dfs))
-    dfs = [df.loc[intersection_index].astype(np.float64) for df in dfs]
+    dfs = [df.loc[intersection_index] for df in dfs]
 
     return dfs
 
@@ -151,48 +152,49 @@ def iterator(
     weight_per_contract = weight_per_contract[intersection_columns]
     costs_per_contract_weighted = costs_per_contract_weighted[intersection_columns]
 
-    dates = ideal_positions_weighted.index
-
     # Initialize cost penalty scalar
     cost_penalty_scalar = 10
 
-    optimized_positions = pd.DataFrame(index=dates, columns=ideal_positions_weighted.columns)
+    optimized_positions = pd.DataFrame(index=ideal_positions_weighted.index, columns=ideal_positions_weighted.columns)
     optimized_positions = optimized_positions.astype(np.float64)
 
-    for n, date in enumerate(dates):
-        ideal_positions_weighted_one_day : np.ndarray = ideal_positions_weighted.loc[date].values
-        costs_per_contract_weighted_one_day : np.ndarray = costs_per_contract_weighted.loc[date].values
-        covariance_matrix_one_day : np.ndarray = covariance_row_to_matrix(covariances.loc[date].values)
-        weight_per_contract_one_day : np.ndarray = weight_per_contract.loc[date].values
-        notional_exposure_per_contract_one_day : np.ndarray = notional_exposure_per_contract.loc[date].values
-        open_interest_one_day : np.ndarray = open_interest.loc[date].values
-        jump_covariance_matrix_one_day : np.ndarray = covariance_row_to_matrix(jump_covariances.loc[date].values)
-        instrument_weight_one_day : np.ndarray = instrument_weight.loc[date].values
+    vectorized_ideal_positions = ideal_positions_weighted.values
+    vectorized_costs_per_contract_weighted = costs_per_contract_weighted.values
+    vectorized_weight_per_contract = weight_per_contract.values
+    vectorized_notional_exposure_per_contract = notional_exposure_per_contract.values
+    vectorized_open_interest = open_interest.values
+    vectorized_covariances = covariances.values
+    vectorized_jump_covariances = jump_covariances.values
+    vectorized_instrument_weight = instrument_weight.values
+
+    for n, date in enumerate(ideal_positions_weighted.index):
+        covariance_matrix_one_day : np.ndarray = covariance_row_to_matrix(vectorized_covariances[n])
+        jump_covariance_matrix_one_day : np.ndarray = covariance_row_to_matrix(vectorized_jump_covariances[n])
 
         held_positions_weighted = np.zeros(len(ideal_positions_weighted.columns))
 
         if n != 0:
-            current_date_IDX = dates.get_loc(date)
-            held_positions_weighted = optimized_positions.iloc[current_date_IDX - 1].values * weight_per_contract_one_day
+            current_date_IDX = ideal_positions_weighted.index.get_loc(date)
+            held_positions_weighted = optimized_positions.iloc[current_date_IDX - 1].values * vectorized_weight_per_contract[n]
 
         x0 : np.ndarray = held_positions_weighted
 
-        optimized_weights_one_day = greedy_algorithm(ideal_positions_weighted_one_day, x0, costs_per_contract_weighted_one_day, held_positions_weighted, weight_per_contract_one_day, covariance_matrix_one_day, cost_penalty_scalar)
+        optimized_weights_one_day = greedy_algorithm(vectorized_ideal_positions[n], x0, vectorized_costs_per_contract_weighted[n], held_positions_weighted, vectorized_weight_per_contract[n], covariance_matrix_one_day, cost_penalty_scalar)
 
         buffered_weights = buffer_weights(
-            optimized_weights_one_day, held_positions_weighted, weight_per_contract_one_day, 
+            optimized_weights_one_day, held_positions_weighted, vectorized_weight_per_contract[n], 
             covariance_matrix_one_day, tau, asymmetric_risk_buffer)
 
-        optimized_positions_one_day = buffered_weights / weight_per_contract_one_day
+        optimized_positions_one_day = buffered_weights / vectorized_weight_per_contract[n]
 
         annualized_volatilities = daily_variance_to_annualized_volatility(np.diag(covariance_matrix_one_day))
 
         risk_limited_positions = position_risk.position_limit_aggregator(
             maximum_position_leverage, capital, IDM, tau, maximum_forecast_ratio, 
             max_acceptable_pct_of_open_interest, max_forecast_buffer, optimized_positions_one_day, 
-            notional_exposure_per_contract_one_day, annualized_volatilities, instrument_weight_one_day, open_interest_one_day)
+            vectorized_notional_exposure_per_contract[n], annualized_volatilities, vectorized_instrument_weight[n], vectorized_open_interest[n])
 
-        risk_limited_positions_weighted = risk_limited_positions * weight_per_contract_one_day
+        risk_limited_positions_weighted = risk_limited_positions * vectorized_weight_per_contract[n]
 
         portfolio_risk_limited_positions = portfolio_risk.portfolio_risk_aggregator(
             risk_limited_positions, risk_limited_positions_weighted, covariance_matrix_one_day, 
