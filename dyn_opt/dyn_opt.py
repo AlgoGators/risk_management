@@ -129,7 +129,7 @@ def iterator(
         costs_per_contract_weighted : pd.DataFrame,
         notional_exposure_per_contract : pd.DataFrame,
         open_interest : pd.DataFrame,
-        instrument_weight : np.ndarray,
+        instrument_weight : pd.DataFrame,
         tau : float,
         capital : float,
         IDM : float,
@@ -153,28 +153,29 @@ def iterator(
 
     dates = ideal_positions_weighted.index
 
-    # Initialize x0 and cost penalty scalar
-    x0 = np.zeros(len(ideal_positions_weighted.columns))
+    # Initialize cost penalty scalar
     cost_penalty_scalar = 10
 
     optimized_positions = pd.DataFrame(index=dates, columns=ideal_positions_weighted.columns)
     optimized_positions = optimized_positions.astype(np.float64)
 
     for n, date in enumerate(dates):
-        ideal_positions_weighted_one_day = ideal_positions_weighted.loc[date].values
-        costs_per_contract_weighted_one_day = costs_per_contract_weighted.loc[date].values
-        covariance_matrix_one_day = covariance_row_to_matrix(covariances.loc[date].values)
-        weight_per_contract_one_day = weight_per_contract.loc[date].values
-        notional_exposure_per_contract_one_day = notional_exposure_per_contract.loc[date].values
-        open_interest_one_day = open_interest.loc[date].values
-        jump_covariance_matrix_one_day = covariance_row_to_matrix(jump_covariances.loc[date].values)
-        instrument_weight_one_day = instrument_weight.loc[date].values
+        ideal_positions_weighted_one_day : np.ndarray = ideal_positions_weighted.loc[date].values
+        costs_per_contract_weighted_one_day : np.ndarray = costs_per_contract_weighted.loc[date].values
+        covariance_matrix_one_day : np.ndarray = covariance_row_to_matrix(covariances.loc[date].values)
+        weight_per_contract_one_day : np.ndarray = weight_per_contract.loc[date].values
+        notional_exposure_per_contract_one_day : np.ndarray = notional_exposure_per_contract.loc[date].values
+        open_interest_one_day : np.ndarray = open_interest.loc[date].values
+        jump_covariance_matrix_one_day : np.ndarray = covariance_row_to_matrix(jump_covariances.loc[date].values)
+        instrument_weight_one_day : np.ndarray = instrument_weight.loc[date].values
 
         held_positions_weighted = np.zeros(len(ideal_positions_weighted.columns))
 
         if n != 0:
             current_date_IDX = dates.get_loc(date)
             held_positions_weighted = optimized_positions.iloc[current_date_IDX - 1].values * weight_per_contract_one_day
+
+        x0 : np.ndarray = held_positions_weighted
 
         optimized_weights_one_day = greedy_algorithm(ideal_positions_weighted_one_day, x0, costs_per_contract_weighted_one_day, held_positions_weighted, weight_per_contract_one_day, covariance_matrix_one_day, cost_penalty_scalar)
 
