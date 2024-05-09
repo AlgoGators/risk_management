@@ -121,7 +121,8 @@ class TestDynamicOptimization(unittest.TestCase):
             maximum_portfolio_risk=maximum_portfolio_risk,
             maximum_jump_risk=maximum_jump_risk,
             asymmetric_risk_buffer=asymmetric_risk_buffer,
-            cost_penalty_scalar=cost_penalty_scalar
+            cost_penalty_scalar=cost_penalty_scalar,
+            additional_data=(ideal_positions.columns, ideal_positions.index[-1])
         )
 
         # Only optimized for last 500 values

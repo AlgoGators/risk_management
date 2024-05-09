@@ -1,10 +1,21 @@
 import pandas as pd
 import numpy as np
+import logging
+import io
+import csv
 from functools import reduce
 from risk_limits import portfolio_risk, position_risk
 
 from risk_metrics.risk_functions import daily_variance_to_annualized_volatility
+from shared_functions._logging import CsvFormatter
 
+logging.basicConfig(
+    level=logging.INFO,
+    handlers=[logging.FileHandler('log.csv', mode='w'),
+        logging.StreamHandler()])
+
+logger = logging.getLogger(__name__)
+logging.root.handlers[0].setFormatter(CsvFormatter())
 
 def get_notional_exposure_per_contract(unadj_prices : pd.DataFrame, multipliers : pd.DataFrame) -> pd.DataFrame:
     notional_exposure_per_contract = unadj_prices.apply(lambda col: col * multipliers.loc['Multiplier', col.name])
@@ -144,7 +155,8 @@ def single_day_optimized_positions(
         maximum_portfolio_risk : float,
         maximum_jump_risk : float,
         asymmetric_risk_buffer : float,
-        cost_penalty_scalar : int = 10) -> np.ndarray:
+        cost_penalty_scalar : int,
+        additional_data : tuple[list[str], list[str]]) -> np.ndarray:
     covariance_matrix_one_day : np.ndarray = covariance_row_to_matrix(covariances_one_day)
     jump_covariance_matrix_one_day : np.ndarray = covariance_row_to_matrix(jump_covariances_one_day)
 
@@ -167,7 +179,7 @@ def single_day_optimized_positions(
     risk_limited_positions = position_risk.position_limit_aggregator(
         maximum_position_leverage, capital, IDM, tau, maximum_forecast_ratio, 
         max_acceptable_pct_of_open_interest, max_forecast_buffer, optimized_positions_one_day, 
-        notional_exposure_per_contract_one_day, annualized_volatilities, instrument_weight_one_day, open_interest_one_day)
+        notional_exposure_per_contract_one_day, annualized_volatilities, instrument_weight_one_day, open_interest_one_day, additional_data)
 
     risk_limited_positions_weighted = risk_limited_positions * weight_per_contract_one_day
 
@@ -233,7 +245,7 @@ def iterator(
             vectorized_weight_per_contract[n], vectorized_costs_per_contract[n], vectorized_notional_exposure_per_contract[n], 
             vectorized_open_interest[n], vectorized_instrument_weight[n], tau, capital, IDM, maximum_forecast_ratio, 
             maximum_position_leverage, max_acceptable_pct_of_open_interest, max_forecast_buffer, maximum_portfolio_leverage, 
-            maximum_correlation_risk, maximum_portfolio_risk, maximum_jump_risk, asymmetric_risk_buffer, cost_penalty_scalar)
+            maximum_correlation_risk, maximum_portfolio_risk, maximum_jump_risk, asymmetric_risk_buffer, cost_penalty_scalar, (ideal_positions.columns, date))
 
     return optimized_positions
 
