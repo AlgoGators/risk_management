@@ -27,4 +27,4 @@ jobs:
               run: python dyn_opt/unittesting/test_dyn_opt.py
             
             - name: Risk_Metrics Unittesting
-              run: python risk_metrics/unittesting/test_risk_measures.py
+              run: python risk_measures/unittesting/test_risk_measures.py
