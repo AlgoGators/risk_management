@@ -1,11 +1,9 @@
 import pandas as pd
 import numpy as np
 import logging
-import io
-import csv
 from functools import reduce
 from risk_limits import portfolio_risk, position_risk
-
+from shared_functions._logging import CsvFormatter
 
 from risk_measures.risk_functions import daily_variance_to_annualized_volatility
 

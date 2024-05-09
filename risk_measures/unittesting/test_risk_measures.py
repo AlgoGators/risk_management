@@ -5,7 +5,6 @@ sys.path.append('../risk_management')
 
 import unittest
 import pandas as pd
-import os
 
 from risk_measures import risk_measures
 
