@@ -2,27 +2,43 @@ import logging
 import csv
 import io
 import datetime
+from enum import Enum
 
+class StringEnum(str, Enum):
+    def __repr__(self): return self.value
+
+class LogType(StringEnum):
+    POSITION_LIMIT = "POSITION LIMIT"
+    PORTFOLIO_MULTIPLIER = "PORTFOLIO MULTIPLIER"
+
+class LogSubType(StringEnum):
+    MAX_LEVERAGE = "MAX LEVERAGE"
+    MAX_FORECAST = "MAX FORECAST"
+    MAX_OPEN_INTEREST = "MAX OPEN INTEREST"
+    LEVERAGE_MULTIPLIER = "LEVERAGE_MULTIPLIER"
+    CORRELATION_MULTIPLIER = "CORRELATION_MULTIPLIER"
+    VOLATILITY_MULTIPLIER = "VOLATILITY_MULTIPLIER"
+    JUMP_MULTIPLIER = "JUMP_MULTIPLIER"
 
 class LogMessage():
     _date : str | datetime.datetime
-    _type : str
-    _subtype : str
+    _type : LogType
+    _subtype : LogSubType
     _info : str
     _additional_info : str
     def __init__(
             self,
-            DATE : str | datetime.datetime,
-            TYPE : str,
-            SUBTYPE : str = None,
+            DATE : datetime.datetime,
+            TYPE : LogType,
+            SUBTYPE : LogSubType = None,
             INFO : str = None,
             ADDITIONAL_INFO : str = None):
-        _date = DATE
-        _type = TYPE
-        _subtype = SUBTYPE
-        _info = INFO
-        _additional_info = ADDITIONAL_INFO
-        self.message = [_date, _type, _subtype, _info, _additional_info]
+        self._date = DATE
+        self._type = TYPE
+        self._subtype = SUBTYPE
+        self._info = INFO
+        self._additional_info = ADDITIONAL_INFO
+        self.message = [self._date, self._type, self._subtype, self._info, self._additional_info]
 
     @classmethod
     def attrs(cls):
@@ -59,4 +75,3 @@ class CsvFormatter(logging.Formatter):
         header.extend(LogMessage.attrs())
         self.output.write(','.join(map(str, header)))
         self.output.write('\n')
-

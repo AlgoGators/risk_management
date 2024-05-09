@@ -1,4 +1,7 @@
 import numpy as np
+import logging
+import datetime
+from shared_functions._logging import LogMessage, LogType, LogSubType
 
 from risk_measures.risk_functions import daily_variance_to_annualized_volatility
 
@@ -85,7 +88,8 @@ def portfolio_risk_aggregator(
         maximum_portfolio_leverage : float,
         maximum_correlation_risk : float,
         maximum_portfolio_risk : float,
-        maximum_jump_risk : float) -> np.ndarray:
+        maximum_jump_risk : float,
+        date : datetime.datetime) -> np.ndarray:
 
     annualized_volatilities = daily_variance_to_annualized_volatility(np.diag(covariance_matrix))
 
@@ -93,5 +97,14 @@ def portfolio_risk_aggregator(
     correlation_multiplier = correlation_risk_portfolio_multiplier(maximum_correlation_risk, positions_weighted, annualized_volatilities)
     volatility_multiplier = portfolio_risk_multiplier(maximum_portfolio_risk, positions_weighted, covariance_matrix)
     jump_multiplier = jump_risk_multiplier(maximum_jump_risk, positions_weighted, jump_covariance_matrix)
+
+    if leverage_multiplier < 1:
+        logging.warning(LogMessage(date, LogType.PORTFOLIO_MULTIPLIER, LogSubType.LEVERAGE_MULTIPLIER, None, leverage_multiplier))
+    if correlation_multiplier < 1:
+        logging.warning(LogMessage(date, LogType.PORTFOLIO_MULTIPLIER, LogSubType.CORRELATION_MULTIPLIER, None, correlation_multiplier))
+    if volatility_multiplier < 1:
+        logging.warning(LogMessage(date, LogType.PORTFOLIO_MULTIPLIER, LogSubType.VOLATILITY_MULTIPLIER, None, volatility_multiplier))
+    if jump_multiplier < 1:
+        logging.warning(LogMessage(date, LogType.PORTFOLIO_MULTIPLIER, LogSubType.JUMP_MULTIPLIER, None, jump_multiplier))
 
     return positions * min(leverage_multiplier, correlation_multiplier, volatility_multiplier, jump_multiplier)

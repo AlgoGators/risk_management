@@ -1,6 +1,7 @@
 import pandas as pd
 import numpy as np
 import logging
+import datetime
 from functools import reduce
 from risk_limits import portfolio_risk, position_risk
 from shared_functions._logging import CsvFormatter
@@ -155,7 +156,7 @@ def single_day_optimized_positions(
         maximum_jump_risk : float,
         asymmetric_risk_buffer : float,
         cost_penalty_scalar : int,
-        additional_data : tuple[list[str], list[str]]) -> np.ndarray:
+        additional_data : tuple[list[str], list[datetime.datetime]]) -> np.ndarray:
     covariance_matrix_one_day : np.ndarray = covariance_row_to_matrix(covariances_one_day)
     jump_covariance_matrix_one_day : np.ndarray = covariance_row_to_matrix(jump_covariances_one_day)
 
@@ -185,7 +186,7 @@ def single_day_optimized_positions(
     portfolio_risk_limited_positions = portfolio_risk.portfolio_risk_aggregator(
         risk_limited_positions, risk_limited_positions_weighted, covariance_matrix_one_day, 
         jump_covariance_matrix_one_day, maximum_portfolio_leverage, maximum_correlation_risk, 
-        maximum_portfolio_risk, maximum_jump_risk)
+        maximum_portfolio_risk, maximum_jump_risk, date=additional_data[1])
 
     return round_multiple(portfolio_risk_limited_positions, 1)
 

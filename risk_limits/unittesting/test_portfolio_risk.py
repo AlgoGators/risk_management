@@ -85,7 +85,7 @@ class TestPortfolioRisk(unittest.TestCase):
         jump_covariance_matrix = np.array([[1.0, 1.0, 1.0], [1.0, 1.0, 1.0], [1.0, 1.0, 1.0]])
 
         result = portfolio_risk_aggregator(
-            positions, weighted_positions, covariance_matrix, jump_covariance_matrix, 2.0, 2.0, 1.0, 1.0
+            positions, weighted_positions, covariance_matrix, jump_covariance_matrix, 2.0, 2.0, 1.0, 1.0, pd.Timestamp('2021-01-01')
         )
 
         np.testing.assert_array_almost_equal(result, np.array([0.491046, 0.098209, 0.098209]))

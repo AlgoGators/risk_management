@@ -1,6 +1,7 @@
 import numpy as np
 import logging
-from shared_functions._logging import LogMessage
+import datetime
+from shared_functions._logging import LogMessage, LogType, LogSubType
 
 def max_leverage_position_limit(maximum_leverage : float, capital : float, notional_exposure_per_contract : float | np.ndarray) -> float | np.ndarray:
     """
@@ -79,7 +80,7 @@ def position_limit_aggregator(
     annualized_volatility : float | np.ndarray,
     instrument_weight : float | np.ndarray,
     open_interest : float | np.ndarray,
-    additional_data : tuple[list[str], str]) -> float | np.ndarray:
+    additional_data : tuple[list[str], datetime.datetime]) -> float | np.ndarray:
     """
     Returns the minimum of the three position limits
     (works for both single instruments and arrays)
@@ -124,11 +125,11 @@ def position_limit_aggregator(
 
     for max_leverage_position, max_forecast_position, max_pct_of_open_interest_position, contract, instrument_name in zip(max_leverage_positions, max_forecast_positions, max_pct_of_open_interest_positions, contracts, additional_data[0]):
         if contract > max_leverage_position:
-            logging.warning(LogMessage(additional_data[1], "POSITION LIMIT", "MAX LEVERAGE", instrument_name, max_leverage_position))
+            logging.warning(LogMessage(additional_data[1], LogType.POSITION_LIMIT, LogSubType.MAX_LEVERAGE, instrument_name, max_leverage_position))
         if contract > max_forecast_position:
-            logging.warning(LogMessage(additional_data[1], "POSITION LIMIT", "MAX FORECAST", instrument_name, max_forecast_position))
+            logging.warning(LogMessage(additional_data[1], LogType.POSITION_LIMIT, LogSubType.MAX_FORECAST, instrument_name, max_forecast_position))
         if contract > max_pct_of_open_interest_position:
-            logging.warning(LogMessage(additional_data[1], "POSITION LIMIT", "MAX OPEN INTEREST", instrument_name, max_pct_of_open_interest_position))
+            logging.warning(LogMessage(additional_data[1], LogType.POSITION_LIMIT, LogSubType.MAX_OPEN_INTEREST, instrument_name, max_pct_of_open_interest_position))
 
     return np.minimum(np.minimum(
         max_leverage_positions,
