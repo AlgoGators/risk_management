@@ -28,3 +28,9 @@ jobs:
             
             - name: Risk_Metrics Unittesting
               run: python risk_measures/unittesting/test_risk_measures.py
+            
+            - name: Risk_limits Unittesting
+              run: |
+                python risk_limits/unittesting/test_minimum_volatility.py
+                python risk_limits/unittesting/test_portfolio_risk.py
+                python risk_limits/unittesting/test_position_risk.py
