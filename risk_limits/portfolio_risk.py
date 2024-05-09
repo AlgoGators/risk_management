@@ -1,6 +1,6 @@
 import numpy as np
 
-from risk_metrics.risk_functions import daily_variance_to_annualized_volatility
+from risk_measures.risk_functions import daily_variance_to_annualized_volatility
 
 def max_leverage_portfolio_multiplier(maximum_portfolio_leverage : float, positions_weighted : np.ndarray) -> float:
     """

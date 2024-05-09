@@ -6,8 +6,9 @@ import csv
 from functools import reduce
 from risk_limits import portfolio_risk, position_risk
 
-from risk_metrics.risk_functions import daily_variance_to_annualized_volatility
-from shared_functions._logging import CsvFormatter
+
+from risk_measures.risk_functions import daily_variance_to_annualized_volatility
+
 
 logging.basicConfig(
     level=logging.INFO,

@@ -20,14 +20,11 @@ jobs:
               with:
                 python-version: 3.11
 
-            - name: Create Requirements.txt
-              run: python .github/workflows/create_requirements_txt.py
-
             - name: Install Dependencies
-              run: python -m pip install -r .github/workflows/requirements.txt
+              run: python -m pip install -r requirements.txt
 
             - name: Dyn_Opt Unittesting
               run: python dyn_opt/unittesting/test_dyn_opt.py
             
             - name: Risk_Metrics Unittesting
-              run: python risk_metrics/unittesting/test_risk_metrics.py
+              run: python risk_measures/unittesting/test_risk_measures.py
