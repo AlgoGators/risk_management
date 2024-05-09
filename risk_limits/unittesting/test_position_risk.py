@@ -62,7 +62,7 @@ class TestPortfolioRisk(unittest.TestCase):
 
         result = position_limit_aggregator(
             max_leverage, capital, IDM, tau, maximum_forecast_ratio, max_acceptable_pct_of_open_interest, max_forecast_buffer, 
-            position, exposure, annualized_volatility, instrument_weight, open_interest)
+            position, exposure, annualized_volatility, instrument_weight, open_interest, (1, 2))
 
         self.assertEqual(result, 2.0)
 
@@ -82,7 +82,7 @@ class TestPortfolioRisk(unittest.TestCase):
 
         result = position_limit_aggregator(
             max_leverage, capital, IDM, tau, maximum_forecast_ratio, max_acceptable_pct_of_open_interest, max_forecast_buffer, 
-            position, exposure, annualized_volatility, instrument_weight, open_interest)
+            position, exposure, annualized_volatility, instrument_weight, open_interest, (1, 2))
 
         self.assertEqual(result, 0.55)
 
