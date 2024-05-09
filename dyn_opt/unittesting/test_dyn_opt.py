@@ -38,27 +38,27 @@ class TestDynamicOptimization(unittest.TestCase):
         ideal_positions = ideal_positions[-500:]
 
         df = dyn_opt.aggregator(
-            capital,
-            fixed_cost_per_contract,
-            tau,
-            asymmetric_risk_buffer,
-            unadj_prices,
-            multipliers,
-            ideal_positions,
-            covariances,
-            jump_covariances,
-            open_interest,
-            instrument_weight,
-            IDM,
-            maximum_forecast_ratio,
-            max_acceptable_pct_of_open_interest,
-            max_forecast_buffer,
-            maximum_position_leverage,
-            maximum_portfolio_leverage,
-            maximum_correlation_risk,
-            maximum_portfolio_risk,
-            maximum_jump_risk,
-            cost_penalty_scalar)
+            capital=capital,
+            fixed_cost_per_contract=fixed_cost_per_contract,
+            tau=tau,
+            asymmetric_risk_buffer=asymmetric_risk_buffer,
+            unadj_prices=unadj_prices,
+            multipliers=multipliers,
+            ideal_positions=ideal_positions,
+            covariances=covariances,
+            jump_covariances=jump_covariances,
+            open_interest=open_interest,
+            instrument_weight=instrument_weight,
+            IDM=IDM,
+            maximum_forecast_ratio=maximum_forecast_ratio,
+            max_acceptable_pct_of_open_interest=max_acceptable_pct_of_open_interest,
+            max_forecast_buffer=max_forecast_buffer,
+            maximum_position_leverage=maximum_position_leverage,
+            maximum_portfolio_leverage=maximum_portfolio_leverage,
+            maximum_correlation_risk=maximum_correlation_risk,
+            maximum_portfolio_risk=maximum_portfolio_risk,
+            maximum_jump_risk=maximum_jump_risk,
+            cost_penalty_scalar=cost_penalty_scalar)
 
         # Only optimized for last 500 values
         expected_df = pd.read_parquet('dyn_opt/unittesting/data/optimized_positions.parquet')
