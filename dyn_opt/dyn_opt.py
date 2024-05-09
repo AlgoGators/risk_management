@@ -3,7 +3,7 @@ import numpy as np
 from functools import reduce
 from risk_limits import portfolio_risk, position_risk
 
-from risk_metrics.risk_functions import daily_variance_to_annualized_volatility
+from risk_measures.risk_functions import daily_variance_to_annualized_volatility
 
 
 def get_notional_exposure_per_contract(unadj_prices : pd.DataFrame, multipliers : pd.DataFrame) -> pd.DataFrame:
