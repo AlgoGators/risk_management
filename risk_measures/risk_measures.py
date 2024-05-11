@@ -120,6 +120,29 @@ def calculate_product_returns(returns : pd.DataFrame, fill=False) -> pd.DataFram
 
     return product_returns
 
+def update_product_returns(product_returns : pd.DataFrame, returns : pd.DataFrame) -> pd.DataFrame:
+    instruments = returns.columns.tolist()
+    instruments.sort()
+
+    product_dictionary : dict = {}
+
+    for i, instrument_X in enumerate(instruments):
+        for j, instrument_Y in enumerate(instruments):
+            if i > j:
+                continue
+            
+            product_dictionary[f'{instrument_X}_{instrument_Y}'] = returns[instrument_X].iloc[-1] * returns[instrument_Y].iloc[-1]
+
+    product_returns.loc[returns.index[-1]] = pd.Series(product_dictionary)
+
+    return product_returns
+
+def calculate_GARCH_variance(squared_return : float, last_estimate : float, LT_variance : float, weights : tuple[float, float, float]) -> float:
+    if sum(weights) != 1:
+        raise ValueError('The sum of the weights must be equal to 1')
+
+    return squared_return * weights[0] + last_estimate * weights[1] + LT_variance * weights[2]
+
 def calculate_GARCH_variances(returns : pd.DataFrame, warmup : int, weights : tuple[float, float, float], fill=False) -> pd.DataFrame:
     if sum(weights) != 1:
         raise ValueError('The sum of the weights must be equal to 1')
@@ -138,8 +161,8 @@ def calculate_GARCH_variances(returns : pd.DataFrame, warmup : int, weights : tu
         df = pd.Series(index=dates)
         df[0] = squared_returns[0]
 
-        for i, _ in enumerate(dates[1:], 1):
-            df[i] = squared_returns[i] * weights[0] + df[i-1] * weights[1] + LT_variances[i] * weights[2]
+        for j, _ in enumerate(dates[1:], 1):
+            df[j] = calculate_GARCH_variance(squared_returns[j], df[j-1], LT_variances[j], weights)
 
         if i == 0:
             GARCH_variances = df.to_frame(instrument)
@@ -151,36 +174,64 @@ def calculate_GARCH_variances(returns : pd.DataFrame, warmup : int, weights : tu
 
     return GARCH_variances[warmup:]
 
+def update_GARCH_variance(variances : pd.DataFrame, returns : pd.DataFrame, warmup : int, weights : tuple[float, float, float]) -> pd.DataFrame:
+    returns = pd.read_parquet('risk_measures/unittesting/data/daily_returns.parquet')
+    GARCH_variances = {}
+
+    # Calculate the GARCH variances
+    for instrument in returns.columns.tolist():
+        squared_returns = returns[instrument].iloc[-warmup:] ** 2
+        squared_return = squared_returns.iloc[-1]
+        last_estimate = variances[instrument].iloc[-1]
+        LT_variance = squared_returns.mean()
+        GARCH_variances[instrument] = calculate_GARCH_variance(squared_return, last_estimate, LT_variance, weights)
+
+    # Could be removed if we want the row instead to append to the database
+    variances.loc[returns.index[-1]] = pd.Series(GARCH_variances)
+    return variances
+
+def calculate_GARCH_covariance(pair_return : float, last_estimate : float, LT_covariance : float, weights : tuple[float, float, float]) -> float:
+    if sum(weights) != 1:
+        raise ValueError('The sum of the weights must be equal to 1')
+
+    return pair_return * weights[0] + last_estimate * weights[1] + LT_covariance * weights[2]
+
 def calculate_GARCH_covariances(product_returns : pd.DataFrame, warmup : int, weights : tuple[float, float, float], fill=False) -> pd.DataFrame:
     if sum(weights) != 1:
         raise ValueError('The sum of the weights must be equal to 1')
     
-    GARCH_covariances : pd.DataFrame = pd.DataFrame()
+    # GARCH_covariances : pd.DataFrame = pd.DataFrame()
 
-    for i, pair in enumerate(product_returns.columns.tolist()):
-        pair_returns = product_returns[pair]
-        pair_returns.dropna(inplace=True)
+    product_returns.dropna(inplace=True)
+    LT_covarariances : pd.DataFrame = product_returns.rolling(window=warmup).mean().fillna(method='bfill')
 
-        dates = pair_returns.index
+    LT_covars = LT_covarariances.values
+    p_returns = product_returns.values
 
-        # Calculate rolling LT variance
-        LT_covariances = pair_returns.rolling(window=warmup).mean().fillna(method='bfill')
+    GARCH_covariances = pd.DataFrame(index=product_returns.index, columns=product_returns.columns, dtype=float)
+    GARCH_covariances.iloc[0] = p_returns[0]
 
-        df = pd.Series(index=dates)
-        df[0] = pair_returns[0]
-
-        for i, _ in enumerate(dates[1:], 1):
-            df[i] = pair_returns[i] * weights[0] + df[i-1] * weights[1] + LT_covariances[i] * weights[2]
-
-        if i == 0:
-            GARCH_covariances = df.to_frame(pair)
-            continue
-
-        GARCH_covariances = pd.merge(GARCH_covariances, df.to_frame(pair), how='outer', left_index=True, right_index=True)
+    for i in range(1, len(p_returns)):
+        GARCH_covariances.iloc[i] = p_returns[i] * weights[0] + GARCH_covariances.iloc[i-1] * weights[1] + LT_covars[i] * weights[2]
 
     GARCH_covariances = GARCH_covariances.interpolate() if fill else GARCH_covariances
 
-    return GARCH_covariances[warmup:]
+    return GARCH_covariances.iloc[warmup:, :]
+
+def update_GARCH_covariance(covariances : pd.DataFrame, product_returns : pd.DataFrame, warmup : int, weights : tuple[float, float, float]) -> pd.DataFrame:
+    GARCH_covariances = {}
+
+    # Calculate the GARCH covariances
+    for pair in product_returns.columns.tolist():
+        pair_returns = product_returns[pair].iloc[-warmup:]
+        pair_return = pair_returns.iloc[-1]
+        last_estimate = covariances[pair].iloc[-1]
+        LT_covariance = pair_returns.mean()
+        GARCH_covariances[pair] = calculate_GARCH_covariance(pair_return, last_estimate, LT_covariance, weights)
+
+    # Could be removed if we want the row instead to append to the database
+    covariances.loc[product_returns.index[-1]] = pd.Series(GARCH_covariances)
+    return covariances
 
 def calculate_value_at_risk_historical(returns : pd.DataFrame, confidence_level : float, lookback : int) -> pd.DataFrame:
     # Calculate the historical value at risk
