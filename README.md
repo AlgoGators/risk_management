@@ -11,7 +11,7 @@ Risk Management is tasked with three objectives:
 
 ### Goals:
 - [x] Integrate risk_limits into Dynamic Optimization
-- [ ] Effectively record whenever a risk limit is activated
+- [x] Effectively record whenever a risk limit is activated
 - [ ] Move the portfolio statistical calculations to risk_measures and then reference them in risk_limits (helping us see how these values change over time)
 - [ ] Asymmetric measures of risk for equities
 - [ ] Build out automated reporting
@@ -34,5 +34,5 @@ Dynamic optimization seeks to find the set of integer positions that minimizes t
 ### Goals
 - [x] Integrate risk limits into the algorithm
 - [ ] Build out robust unittesting to help identify and mitigate any potential rooms for propegating data errors
-- [ ] Rewrite the algorithm (maybe using simulated annealing) to increase efficiency...
+- [x] Rewrite the algorithm (maybe using simulated annealing) to increase efficiency...
 - [ ] **OR** switch to a faster programming language such as Rust or C++ 
