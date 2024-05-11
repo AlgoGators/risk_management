@@ -58,7 +58,6 @@ class RiskMeasures:
     # ?     self.__update_GARCH_covariance(GARCH_covariances, product_returns)
 
     def __calculate_daily_returns(self) -> dict[str, pd.DataFrame]:
-
         daily_returns : pd.DataFrame = pd.DataFrame()
         for i, instrument in enumerate(list(self.trend_tables.keys())):
             prices = self.trend_tables[instrument]
