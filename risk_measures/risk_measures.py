@@ -51,6 +51,24 @@ class RiskMeasures:
         self.GARCH_variances = self.__calculate_GARCH_variances()
         self.GARCH_covariances = self.__calculate_GARCH_covariances()
 
+        self.reindex(True)
+
+    def reindex(self, inner : bool = True) -> None:
+        if inner:
+            indexes = self.daily_returns.index.intersection(self.product_returns.index).intersection(self.GARCH_variances.index).intersection(self.GARCH_covariances.index)
+            self.daily_returns = self.daily_returns.loc[indexes]
+            self.product_returns = self.product_returns.loc[indexes]
+            self.GARCH_variances = self.GARCH_variances.loc[indexes]
+            self.GARCH_covariances = self.GARCH_covariances.loc[indexes]
+            return
+        
+        indexes = self.daily_returns.index.union(self.product_returns.index).union(self.GARCH_variances.index).union(self.GARCH_covariances.index)
+        self.daily_returns = self.daily_returns.reindex(indexes)
+        self.product_returns = self.product_returns.reindex(indexes)
+        self.GARCH_variances = self.GARCH_variances.reindex(indexes)
+        self.GARCH_covariances = self.GARCH_covariances.reindex(indexes)
+
+
     # ? def update(self, product_returns, GARCH_variances, GARCH_covariances) -> None:
     # ?     self.daily_returns = self.__calculate_daily_returns(self.trend_tables)
     # ?     self.__update_product_returns(product_returns, self.daily_returns)
