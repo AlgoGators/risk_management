@@ -7,10 +7,23 @@ private:
     Matrix returns;
     Matrix weights;
 public:
-    RiskMeasures(Matrix returns, Matrix weights) : returns(returns), weights(weights) {}
+    RiskMeasures(Matrix returns, Matrix weights) : returns(returns), weights(weights) {
+        checkWeights();
+    }
 
     void covariance() {
 
+    }
+
+private:
+    void checkWeights() {
+        if (weights.getRows() != 1 && weights.getCols() != 3) {
+            throw std::invalid_argument("Invalid weights matrix dimensions.");
+        }
+        double sum = weights.sum();
+        if (sum != 1) {
+            throw std::invalid_argument("Weights do not sum to 1.");
+        }
     }
 };
 
@@ -25,4 +38,9 @@ int main() {
     matrix1 = ~matrix1;
     std::string str = matrix1.toString();
     std::cout << str << std::endl;
+
+    Matrix y = matrix1(1, 2);
+    std::cout << y << std::endl;
+    return 0;
+
 }

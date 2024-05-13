@@ -6,7 +6,9 @@
 #include <string>
 #include <sstream>
 #include <iomanip>
-#include <stdexcept> // for std::invalid_argument
+#include <utility>
+#include <limits>
+#include <stdexcept>
 
 class Matrix {
 private:
@@ -23,6 +25,9 @@ public:
         }
         checkHomogeneity();
     }
+
+    //? Largest unsigned int value instead of signed int
+    static const int ALL = std::numeric_limits<int>::max();
 
     Matrix(const std::vector<std::vector<double>>& matrix) : matrix(matrix) {
         checkHomogeneity();
@@ -66,6 +71,52 @@ public:
 
     Matrix operator~() const {
         return transpose();
+    }
+
+    Matrix operator()(int row, int col) const {
+        return get(row, col);
+    }
+
+    size_t getRows() const {
+        return matrix.size();
+    }
+
+    size_t getCols() const {
+        return matrix[0].size();
+    }
+
+    Matrix get(int i, int j) const {
+        int x;
+        int y;
+
+        if (i == ALL && j == ALL) {
+            return *this;
+        }
+
+        if (i == ALL) {
+            std::vector<std::vector<double>> result(matrix.size(), std::vector<double>(1, 0));
+            for (size_t k = 0; k < matrix.size(); ++k) {
+                result[k][0] = matrix[k][j];
+            }
+            return Matrix(result);
+        }
+
+        if (j == ALL) {
+            std::vector<std::vector<double>> result(1, std::vector<double>(matrix[0].size(), 0));
+            for (size_t k = 0; k < matrix[0].size(); ++k) {
+                result[0][k] = matrix[i][k];
+            }
+            return Matrix(result);
+        }
+
+        x = i >= 0 ? i : matrix.size() + i;
+        y = j >= 0 ? j : matrix[x].size() + j;
+
+        if (x >= matrix.size() || y >= matrix[x].size()) {
+            throw std::invalid_argument("Index out of bounds.");
+        }
+
+        return Matrix(std::vector<std::vector<double>>(1, std::vector<double>(1, matrix[x][y])));
     }
 
     // will get to this later https://stackoverflow.com/questions/16737298/what-is-the-fastest-way-to-transpose-a-matrix-in-c
@@ -184,13 +235,14 @@ public:
         return Matrix(result);
     }
 
-    void print() const {
+    double sum() const {
+        double sum = 0;
         for (size_t i = 0; i < matrix.size(); ++i) {
             for (size_t j = 0; j < matrix[i].size(); ++j) {
-                std::cout << matrix[i][j] << " ";
+                sum += matrix[i][j];
             }
-            std::cout << std::endl;
         }
+        return sum;
     }
 
     std::string toString() const {
@@ -269,6 +321,22 @@ private:
             matrix.push_back(row);
         }
     }
+    
+    void print(std::ostream& os) const {
+        for (size_t i = 0; i < matrix.size(); ++i) {
+            for (size_t j = 0; j < matrix[i].size(); ++j) {
+                os << matrix[i][j] << " ";
+            }
+        }
+    }
+
+    // Declare the overloaded << operator as friend to access private members
+    friend std::ostream& operator<<(std::ostream& os, const Matrix& matrix);
 };
+// Overload the << operator to print Matrix objects
+std::ostream& operator<<(std::ostream& os, const Matrix& matrix) {
+    matrix.print(os);
+    return os;
+}
 
 #endif
