@@ -1,3 +1,5 @@
 __pycache__
 *.ipynb
 **/log.*
+/.vscode
+*.exe
