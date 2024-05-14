@@ -171,9 +171,7 @@ public:
 
     void appendColumn(const Matrix& other) {
         if (matrix.empty() || other.matrix.size() == matrix.size()) {
-            for (size_t i = 0; i < other.matrix.size(); ++i) {
-                matrix.push_back(other.matrix[i]);
-            }
+            appendColumn(other.matrix[0]);
             return;
         }
         throw std::invalid_argument("Column size must match matrix row size.");
