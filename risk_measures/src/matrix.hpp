@@ -33,6 +33,12 @@ public:
         checkHomogeneity();
     }
 
+    Matrix() : matrix(std::vector<std::vector<double>>()) {}
+
+    Matrix(int rows, int cols, double value) : matrix(rows, std::vector<double>(cols, value)) {}
+
+    Matrix(int rows, int cols) : matrix(rows, std::vector<double>(cols, 0)) {}
+
     Matrix operator+(const Matrix& other) const {
         return add(other);
     }
@@ -43,6 +49,11 @@ public:
 
     Matrix operator-(const Matrix& other) const {
         return subtract(other);
+    }
+
+    friend Matrix operator-(double scalar, const Matrix& matrix) {
+        Matrix mat = matrix.multiply(-1);
+        return mat.add(scalar);
     }
 
     Matrix operator*(const Matrix& other) const {
@@ -117,6 +128,55 @@ public:
         }
 
         return Matrix(std::vector<std::vector<double>>(1, std::vector<double>(1, matrix[x][y])));
+    }
+
+    std::pair<int, int> shape() const {
+        if (matrix.empty()) {
+            return std::make_pair(0, 0);
+        }
+        return std::make_pair(matrix.size(), matrix[0].size());
+    }
+
+    void appendRow(const std::vector<double>& row) {
+        if (matrix.empty()) {
+            matrix.push_back(row);
+            return;
+        }
+        if (row.size() != matrix[0].size()) {
+            throw std::invalid_argument("Row size must match matrix column size.");
+        }
+        matrix.push_back(row);
+    }
+
+    void appendRow(const Matrix& other) {
+        if (matrix.empty()) {
+            matrix = other.matrix;
+            return;
+        }
+        if (other.matrix[0].size() != matrix[0].size()) {
+            throw std::invalid_argument("Row size must match matrix column size.");
+        }
+        matrix.insert(matrix.end(), other.matrix.begin(), other.matrix.end());
+    }
+
+    void appendColumn(const std::vector<double>& col) {
+        if (matrix.empty() || col.size() == matrix.size()) {
+            for (size_t i = 0; i < col.size(); ++i) {
+                matrix.push_back(std::vector<double>(1, col[i]));
+            }
+            return;
+        }
+        throw std::invalid_argument("Column size must match matrix row size.");
+    }
+
+    void appendColumn(const Matrix& other) {
+        if (matrix.empty() || other.matrix.size() == matrix.size()) {
+            for (size_t i = 0; i < other.matrix.size(); ++i) {
+                matrix.push_back(other.matrix[i]);
+            }
+            return;
+        }
+        throw std::invalid_argument("Column size must match matrix row size.");
     }
 
     // will get to this later https://stackoverflow.com/questions/16737298/what-is-the-fastest-way-to-transpose-a-matrix-in-c
@@ -245,6 +305,10 @@ public:
         return sum;
     }
 
+    double mean() const {
+        return sum() / (matrix.size() * matrix[0].size());
+    }
+
     std::string toString() const {
         std::ostringstream oss;
         oss << "[";
@@ -326,6 +390,10 @@ private:
         for (size_t i = 0; i < matrix.size(); ++i) {
             for (size_t j = 0; j < matrix[i].size(); ++j) {
                 os << matrix[i][j] << " ";
+            }
+            if (i != matrix.size() - 1)
+            {
+                os << std::endl;
             }
         }
     }

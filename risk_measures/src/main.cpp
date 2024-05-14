@@ -12,7 +12,15 @@ public:
     }
 
     void covariance() {
+    }
 
+    Matrix productReturns() {
+        Matrix product_returns;
+        for (int i = 0; i < returns.getCols(); i++) {
+            for (int j = 0; j < returns.getCols(); j++) {
+                returns(Matrix::ALL, i) * returns(Matrix::ALL, j);
+            }
+        }
     }
 
 private:
@@ -31,8 +39,6 @@ int main() {
     Matrix matrix1 = Matrix({{1.0, 2.0, 3.0}, {4.0, 5.0, 6.0}, {7.0, 8.0, 9.0}});
     Matrix matrix2 = Matrix(std::vector<std::vector<double>>{{7.0, 8.0, 9.0}});
     Matrix matrix3 = Matrix({std::string{"[[7],[8],[9]]"}});
-    // std::string matrixStr = "[[0,1,2],[3,4,5],[6,7,8]]";
-    // Matrix matrix2 = Matrix(matrixStr);
     Matrix x = matrix2 % matrix1 % matrix3;
     x = x / 2;
     matrix1 = ~matrix1;
@@ -40,7 +46,20 @@ int main() {
     std::cout << str << std::endl;
 
     Matrix y = matrix1(1, 2);
-    std::cout << y << std::endl;
+    Matrix z = matrix1(1, Matrix::ALL);
+    Matrix a = matrix1(Matrix::ALL, 2);
+    // std::cout << y << std::endl;
+    // std::cout << z << std::endl;
+    // std::cout << a << std::endl;
+    // std::cout << matrix1 << std::endl;
+
+    Matrix b;
+
+    Matrix c = Matrix(std::vector<std::vector<double>>{{1.0, 2.0}});
+    b.appendColumn(c);
+
+    std::cout << b << std::endl;
+
     return 0;
 
 }
