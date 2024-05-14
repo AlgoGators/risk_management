@@ -170,7 +170,11 @@ public:
     }
 
     void appendColumn(const Matrix& other) {
-        if (matrix.empty() || other.matrix.size() == matrix.size()) {
+        if (matrix.empty()) {
+            matrix = other.matrix;
+            return;
+        }
+        if (other.matrix.size() == matrix.size()) {
             appendColumn(other.matrix[0]);
             return;
         }
