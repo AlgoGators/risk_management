@@ -6,9 +6,10 @@
 #include <string>
 #include <sstream>
 #include <iomanip>
-#include <utility>
 #include <limits>
-#include <stdexcept>
+
+#define UNSET_INT std::numeric_limits<int>::max()
+#define ALL UNSET_INT
 
 class Matrix {
 private:
@@ -26,8 +27,8 @@ public:
         checkHomogeneity();
     }
 
-    //? Largest unsigned int value instead of signed int
-    static const int ALL = std::numeric_limits<int>::max();
+    // //? Largest unsigned int value instead of signed int
+    // static const int ALL = std::numeric_limits<int>::max();
 
     Matrix(const std::vector<std::vector<double>>& matrix) : matrix(matrix) {
         checkHomogeneity();
@@ -100,11 +101,11 @@ public:
         int x;
         int y;
 
-        if (i == ALL && j == ALL) {
+        if (i == UNSET_INT && j == UNSET_INT) {
             return *this;
         }
 
-        if (i == ALL) {
+        if (i == UNSET_INT) {
             std::vector<std::vector<double>> result(matrix.size(), std::vector<double>(1, 0));
             for (size_t k = 0; k < matrix.size(); ++k) {
                 result[k][0] = matrix[k][j];
@@ -112,7 +113,7 @@ public:
             return Matrix(result);
         }
 
-        if (j == ALL) {
+        if (j == UNSET_INT) {
             std::vector<std::vector<double>> result(1, std::vector<double>(matrix[0].size(), 0));
             for (size_t k = 0; k < matrix[0].size(); ++k) {
                 result[0][k] = matrix[i][k];
@@ -137,49 +138,108 @@ public:
         return std::make_pair(matrix.size(), matrix[0].size());
     }
 
-    void appendRow(const std::vector<double>& row) {
+    void append(const std::vector<double>& vector, int axis = 0) {
         if (matrix.empty()) {
-            matrix.push_back(row);
-            return;
-        }
-        if (row.size() != matrix[0].size()) {
-            throw std::invalid_argument("Row size must match matrix column size.");
-        }
-        matrix.push_back(row);
-    }
-
-    void appendRow(const Matrix& other) {
-        if (matrix.empty()) {
-            matrix = other.matrix;
-            return;
-        }
-        if (other.matrix[0].size() != matrix[0].size()) {
-            throw std::invalid_argument("Row size must match matrix column size.");
-        }
-        matrix.insert(matrix.end(), other.matrix.begin(), other.matrix.end());
-    }
-
-    void appendColumn(const std::vector<double>& col) {
-        if (matrix.empty() || col.size() == matrix.size()) {
-            for (size_t i = 0; i < col.size(); ++i) {
-                matrix.push_back(std::vector<double>(1, col[i]));
+            if (axis == 0) {
+                matrix.push_back(vector);
+                return;
+            }
+            for (size_t i = 0; i < vector.size(); ++i) {
+                matrix.push_back(std::vector<double>(1, vector[i]));
             }
             return;
         }
-        throw std::invalid_argument("Column size must match matrix row size.");
+        if (axis == 0) {
+            if (vector.size() != matrix[0].size()) {
+                throw std::invalid_argument("Column size must match matrix column size.");
+            }
+            matrix.push_back(vector);
+        }
+        else if (axis == 1) {
+            if (vector.size() != matrix.size()) {
+                throw std::invalid_argument("Row size must match matrix row size.");
+            }
+            for (size_t i = 0; i < matrix.size(); ++i) {
+                matrix[i].push_back(vector[i]);
+            }
+        }
+        else {
+            throw std::invalid_argument("Axis must be 0 or 1.");
+        }
     }
 
-    void appendColumn(const Matrix& other) {
+    void append(const Matrix& other) {
         if (matrix.empty()) {
             matrix = other.matrix;
             return;
         }
-        if (other.matrix.size() == matrix.size()) {
-            appendColumn(other.matrix[0]);
+        if (other.matrix.empty()) {
             return;
         }
-        throw std::invalid_argument("Column size must match matrix row size.");
+
+        int axis = other.matrix.size() == 1 ? 1 : 0;
+        if (axis == 0) {
+            if (other.matrix[0].size() != matrix[0].size()) {
+                throw std::invalid_argument("Column size must match matrix column size.");
+            }
+            matrix.insert(matrix.end(), other.matrix.begin(), other.matrix.end());
+            return;
+        }
+        if (axis == 1) {
+            if (other.matrix.size() != matrix.size()) {
+                throw std::invalid_argument("Row size must match matrix row size.");
+            }
+            for (size_t i = 0; i < matrix.size(); ++i) {
+                matrix[i].insert(matrix[i].end(), other.matrix[i].begin(), other.matrix[i].end());
+            }
+            return;
+        }
+        throw std::invalid_argument("Axis must be 0 or 1.");
     }
+
+    // void appendRow(const std::vector<double>& row) {
+    //     if (matrix.empty()) {
+    //         matrix.push_back(row);
+    //         return;
+    //     }
+    //     if (row.size() != matrix[0].size()) {
+    //         throw std::invalid_argument("Row size must match matrix column size.");
+    //     }
+    //     matrix.push_back(row);
+    // }
+
+    // void appendRow(const Matrix& other) {
+    //     if (matrix.empty()) {
+    //         matrix = other.matrix;
+    //         return;
+    //     }
+    //     if (other.matrix[0].size() != matrix[0].size()) {
+    //         throw std::invalid_argument("Row size must match matrix column size.");
+    //     }
+    //     matrix.insert(matrix.end(), other.matrix.begin(), other.matrix.end());
+    // }
+
+    // void appendColumn(const std::vector<double>& col) {
+    //     if (matrix.empty() || col.size() == matrix.size()) {
+    //         for (size_t i = 0; i < col.size(); ++i) {
+    //             matrix.push_back(std::vector<double>(1, col[i]));
+    //         }
+    //         return;
+    //     }
+    //     throw std::invalid_argument("Column size must match matrix row size.");
+    // }
+
+    // void appendColumn(const Matrix& other) {
+    //     if (matrix.empty()) {
+    //         matrix = other.matrix;
+    //         return;
+    //     }
+    //     if (other.matrix.size() == matrix.size()) {
+    //         appendColumn(other.matrix[0]);
+    //         return;
+    //     }
+    //     throw std::invalid_argument("Column size must match matrix row size.");
+    // }
 
     // will get to this later https://stackoverflow.com/questions/16737298/what-is-the-fastest-way-to-transpose-a-matrix-in-c
     Matrix transpose() const {

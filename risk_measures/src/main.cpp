@@ -18,7 +18,7 @@ public:
         Matrix product_returns;
         for (int i = 0; i < returns.getCols(); i++) {
             for (int j = 0; j < returns.getCols(); j++) {
-                returns(Matrix::ALL, i) * returns(Matrix::ALL, j);
+                returns(ALL, i) * returns(ALL, j);
             }
         }
     }
@@ -46,8 +46,8 @@ int main() {
     std::cout << str << std::endl;
 
     Matrix y = matrix1(1, 2);
-    Matrix z = matrix1(1, Matrix::ALL);
-    Matrix a = matrix1(Matrix::ALL, 2);
+    Matrix z = matrix1(1, ALL);
+    Matrix a = matrix1(ALL, 2);
     // std::cout << y << std::endl;
     // std::cout << z << std::endl;
     // std::cout << a << std::endl;
@@ -56,9 +56,15 @@ int main() {
     Matrix b;
 
     Matrix c = Matrix(std::vector<std::vector<double>>{{1.0, 2.0}});
-    b.appendColumn(c);
-
+    std::vector<double> v = {1.0, 2.0};
+    // b.appendRow(c);
+    std::cout << c << std::endl;
+    b.append(c);
+    b.append(c);
     std::cout << b << std::endl;
+    // b.append(v);
+    // std::cout << b << std::endl;
+
 
     return 0;
 
