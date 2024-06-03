@@ -1,7 +1,20 @@
+import os 
+
+# print(os.getcwd())
+# print(os.listdir('risk_limits'))
+# print(os.listdir('dyn_opt'))
+# import sys
+# print(sys.path)
+# import sys
+# sys.path.append('/app/risk_limits')
+
+
 import pandas as pd
 import numpy as np
 import logging
 import datetime
+import pickle
+import sys
 from functools import reduce
 from risk_limits import portfolio_risk, position_risk
 from shared_functions._logging import CsvFormatter
@@ -287,3 +300,54 @@ def aggregator(
         instrument_weight, tau, capital, IDM, maximum_forecast_ratio, maximum_position_leverage, 
         max_acceptable_pct_of_open_interest, max_forecast_buffer, maximum_portfolio_leverage, 
         maximum_correlation_risk, maximum_portfolio_risk, maximum_jump_risk, asymmetric_risk_buffer, cost_penalty_scalar)
+
+def process_arguments():
+    # Read serialized arguments from stdin
+    serialized_args = [sys.stdin.buffer.read() for _ in range(16)]  # Adjust the range based on the number of arguments
+
+    # Deserialize arguments
+    capital, tau, asymmetric_risk_buffer, fixed_cost_per_contract, instrument_weight, IDM, \
+    maximum_forecast_ratio, maximum_portfolio_risk, maximum_jump_risk, maximum_position_leverage, \
+    maximum_correlation_risk, maximum_portfolio_leverage, max_acceptable_pct_of_open_interest, \
+    max_forecast_buffer, cost_penalty_scalar = [pickle.loads(arg) for arg in serialized_args]
+
+    return capital, tau, asymmetric_risk_buffer, fixed_cost_per_contract, instrument_weight, IDM, \
+           maximum_forecast_ratio, maximum_portfolio_risk, maximum_jump_risk, maximum_position_leverage, \
+           maximum_correlation_risk, maximum_portfolio_leverage, max_acceptable_pct_of_open_interest, \
+           max_forecast_buffer, cost_penalty_scalar
+
+def process_dataframes():
+    # Read DataFrame inputs from stdin
+    serialized_dfs = [sys.stdin.buffer.read() for _ in range(6)]  # Adjust the range based on the number of DataFrames
+
+    # Deserialize DataFrames
+    dfs = [pickle.loads(df) for df in serialized_dfs]
+    return dfs
+
+def main():
+    # Step 1: Process arguments
+    capital, tau, asymmetric_risk_buffer, fixed_cost_per_contract, instrument_weight, IDM, \
+    maximum_forecast_ratio, maximum_portfolio_risk, maximum_jump_risk, maximum_position_leverage, \
+    maximum_correlation_risk, maximum_portfolio_leverage, max_acceptable_pct_of_open_interest, \
+    max_forecast_buffer, cost_penalty_scalar = process_arguments()
+
+    # Step 2: Process DataFrames
+    unadj_prices, multipliers, ideal_positions, covariances, jump_covariances, open_interest = process_dataframes()
+
+    optimized_positions = aggregator(
+        capital=capital, tau=tau, asymmetric_risk_buffer=asymmetric_risk_buffer, fixed_cost_per_contract=fixed_cost_per_contract, 
+        instrument_weight=instrument_weight, IDM=IDM, maximum_forecast_ratio=maximum_forecast_ratio, 
+        maximum_portfolio_risk=maximum_portfolio_risk, maximum_jump_risk=maximum_jump_risk, 
+        maximum_position_leverage=maximum_position_leverage, maximum_correlation_risk=maximum_correlation_risk, 
+        maximum_portfolio_leverage=maximum_portfolio_leverage, max_acceptable_pct_of_open_interest=max_acceptable_pct_of_open_interest, 
+        max_forecast_buffer=max_forecast_buffer, cost_penalty_scalar=cost_penalty_scalar, unadj_prices=unadj_prices, multipliers=multipliers,
+        ideal_positions=ideal_positions, covariances=covariances, jump_covariances=jump_covariances, open_interest=open_interest)
+    
+    # serialized_optimized_positions = pickle.dumps(optimized_positions)
+
+    # sys.stdout.buffer.write(serialized_optimized_positions)
+
+    return optimized_positions
+
+if __name__ == "__main__":
+    main()

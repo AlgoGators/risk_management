@@ -1,0 +1,15 @@
+FROM python:3.11-slim
+
+WORKDIR /app
+
+COPY requirements.txt .
+
+RUN pip install --no-cache-dir -r requirements.txt
+
+COPY dyn_opt/dyn_opt.py ./dyn_opt/
+COPY risk_limits/portfolio_risk.py ./dyn_opt/risk_limits/portfolio_risk.py
+COPY risk_limits/position_risk.py ./dyn_opt/risk_limits/position_risk.py
+COPY shared_functions/_logging.py ./dyn_opt/shared_functions/_logging.py
+COPY risk_measures/risk_functions.py ./dyn_opt/risk_measures/risk_functions.py
+
+CMD [ "python", "dyn_opt/dyn_opt.py"]
