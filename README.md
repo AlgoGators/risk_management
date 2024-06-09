@@ -36,3 +36,16 @@ Dynamic optimization seeks to find the set of integer positions that minimizes t
 - [ ] Build out robust unittesting to help identify and mitigate any potential rooms for propegating data errors
 - [x] Rewrite the algorithm (maybe using simulated annealing) to increase efficiency...
 - [ ] **OR** switch to a faster programming language such as Rust or C++ 
+
+## Building Docker Containers
+Building dyn_opt:
+- Open command line in the parent directory (risk_management) and run:
+
+```docker build -f docker/Dockerfile.dyn_opt -t dyn_opt_container .```
+
+
+## Running Docker Containers
+Running dyn_opt:
+- Open command line and run:
+
+```docker run -p 5000:5000 dyn_opt_container```
