@@ -73,3 +73,6 @@ def main():
 
     result = client_request(data)
     print(result)
+
+if __name__ == '__main__':
+    main()
