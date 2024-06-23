@@ -46,14 +46,14 @@ Building dyn_opt:
 Building risk_measures:
 - ...
 
-```docker build -t risk_measures_container -f docker/Dockerfile.risk_measures .```
+```docker build -f docker/Dockerfile.risk_measures -t risk_measures_container .```
 
 
 ## Running Docker Containers
 Running dyn_opt:
 - Open command line and run:
 
-```docker run -p 5000:5000 dyn_opt_container```
+```docker run -p 5000:5000 dyn_opt_container .```
 
 Running risk_measures:
 
