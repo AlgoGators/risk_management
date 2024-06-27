@@ -1,36 +1,9 @@
-import requests
 import pandas as pd
-import numpy as np
-import json
-
-def sanitize_data(df):
-    df = df.replace([np.inf, -np.inf], np.nan)
-    df.index = df.index.astype(str)  # Convert index to string
-    return df.where(pd.notnull(df), None)  # Convert NaN to None
-
-def serialize_data(data):
-    try:
-        return json.dumps(data)
-    except Exception as e:
-        print("Error serializing data:", e)
-        print("Data:", data)
-        return None
-
-def client_request(data : dict) -> pd.DataFrame:
-    serialized_data = serialize_data(data)
-    if serialized_data is not None:
-        headers = {'Content-Type': 'application/json'}
-        response = requests.post('http://localhost:5000/aggregator', data=serialized_data, headers=headers)
-
-        if response.status_code == 200:
-            result = response.json()
-            result_df = pd.read_json(result)
-            return result_df
-        else:
-            raise Exception(f"Error: {response.status_code}")
+from _utils import client_request, sanitize_data, convert_to_dataframes, SERVICE_TYPE
 
 def main():
     unadj_prices = pd.read_parquet('dyn_opt/unittesting/data/unadj_prices.parquet')
+    unadj_prices = unadj_prices.iloc[-100:]
     multipliers = pd.read_parquet('dyn_opt/unittesting/data/multipliers.parquet')
     ideal_positions = pd.read_parquet('dyn_opt/unittesting/data/ideal_positions.parquet')
     covariances = pd.read_parquet('dyn_opt/unittesting/data/covariances.parquet')
@@ -71,8 +44,9 @@ def main():
         "cost_penalty_scalar": 10
     }
 
-    result = client_request(data)
-    print(result)
+    result = client_request(data, 5000, SERVICE_TYPE.AGGREGATOR)
+    dfs = convert_to_dataframes(result)
+    print(dfs['positions'])
 
 if __name__ == '__main__':
     main()
