@@ -31,7 +31,7 @@ def aggregator():
     maximum_jump_risk = data['maximum_jump_risk']
     cost_penalty_scalar = data['cost_penalty_scalar']
 
-    result = dyn_opt.aggregator(
+    positions = dyn_opt.aggregator(
         capital, fixed_cost_per_contract, tau, asymmetric_risk_buffer, 
         unadj_prices, multipliers, ideal_positions, covariances, 
         jump_covariances, open_interest, instrument_weight, IDM, 
@@ -42,7 +42,9 @@ def aggregator():
     )
 
     # Convert the result to a JSON serializable format
-    result_json = result.to_json()
+    result_json = {
+        'positions' : positions.to_json()
+    }
 
     return jsonify(result_json)
 
