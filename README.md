@@ -53,7 +53,7 @@ Building risk_measures:
 Running dyn_opt:
 - Open command line and run:
 
-```docker run -p 5000:5000 dyn_opt_container .```
+```docker run -p 5000:5000 dyn_opt_container```
 
 Running risk_measures:
 
